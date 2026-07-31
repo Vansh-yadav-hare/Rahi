@@ -23,22 +23,16 @@ still write and scaffold everything else in the meantime.
 
 ---
 
-## 1. Project setup
+## 1. Project setup (Frontend SPA set up; Backend initialization)
 
 ```
-Create a monorepo-style project with two folders: `frontend/` and `backend/`.
-In `frontend/`, scaffold a React app using Vite. Install and configure Tailwind CSS.
-In `backend/`, initialize a Node.js + Express project with a single `/health` route
-that returns { status: "ok" }. Add a `.env.example` file in backend/ listing these
-keys with placeholder values: MONGODB_URI, REDIS_URL, JWT_SECRET, GOOGLE_MAPS_API_KEY,
-RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET, CLOUDINARY_URL, FIREBASE_SERVER_KEY.
-Add ESLint and Prettier configs to both frontend and backend.
-Do not attempt to fill in real values for any of these — list them as placeholders
-and tell me which ones you'll need me to provide before each later feature is built.
+The frontend is already set up as a standard React + JavaScript SPA using Vite, Tailwind CSS v4, and react-router-dom. Pages like Home.jsx, Search.jsx, Safety.jsx, and RideDetails.jsx have been stubbed and connected using apiClient.js (axios instance with automatic JWT header attachment).
+Let's set up the backend. In backend/, initialize a Node.js + Express project with ES Modules and a single /health route that returns { status: "ok" }. Add a `.env.example` file in backend/ listing these keys with placeholder values: MONGODB_URI, REDIS_URL, JWT_SECRET, GOOGLE_OAUTH_CLIENT_ID, GOOGLE_OAUTH_CLIENT_SECRET, GOOGLE_MAPS_API_KEY, RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET, CLOUDINARY_URL, FIREBASE_SERVER_KEY.
+Add ESLint and Prettier configs for backend.
 ```
 
 🔑 **EXTERNAL SERVICE — before continuing to step 2:**
-Create your MongoDB Atlas cluster and Redis instance now, and paste `MONGODB_URI` and `REDIS_URL` into `.env`. The next command needs both to actually connect.
+Create your MongoDB Atlas cluster and Redis instance now, and paste `MONGODB_URI` and `REDIS_URL` into `backend/.env`. The next command needs both to actually connect.
 
 ```
 In backend/, create this folder structure under src/: config/, models/, routes/,
@@ -49,13 +43,6 @@ Create config/redis.js that connects to Redis using REDIS_URL from env.
 Wire both into server.js so the app fails fast with a clear error if either connection fails.
 If MONGODB_URI or REDIS_URL are missing from .env, throw a clear startup error
 telling me to add them rather than silently falling back to a default.
-```
-
-```
-In frontend/src/, create this folder structure: components/, pages/, features/,
-hooks/, services/. Create services/apiClient.js — an axios instance with baseURL
-read from an environment variable, and an interceptor that attaches a JWT from
-local storage to the Authorization header if present.
 ```
 
 ---
@@ -103,7 +90,7 @@ finds the User, and returns a signed JWT.
 ```
 
 🔑 **EXTERNAL SERVICE — before continuing:**
-Create a Google Cloud project, enable OAuth consent + credentials, and paste `GOOGLE_OAUTH_CLIENT_ID`/`GOOGLE_OAUTH_CLIENT_SECRET` into `.env`.
+Create a Google Cloud project, enable OAuth consent + credentials, and paste `GOOGLE_OAUTH_CLIENT_ID`/`GOOGLE_OAUTH_CLIENT_SECRET` into `backend/.env`.
 
 ```
 Implement Google OAuth login at POST /api/auth/google in backend/. Verify the
@@ -122,23 +109,23 @@ route GET /api/users/me that just returns req.user for now.
 
 ---
 
-## 4. Frontend — shell and auth screens (build one at a time)
+## 4. Frontend — auth integration and layout routing
 
 ```
-Create the app shell in frontend/: a Router setup (React Router) with routes for
-/, /search, /rides/:id, /booking/:id, /profile, /login. Create a top-level Layout
-component with a header (logo, nav links, login/profile button) and a content outlet.
+Create/verify the app shell in frontend/src/App.jsx: using react-router-dom, add routes for
+/, /search, /ride/:rideId, /booking/:bookingId, /profile, /login. 
+Create a top-level layout layout containing <SiteHeader />, <Outlet /> or routes, and <SiteFooter />.
 ```
 
 ```
 Create the Login page component in frontend/src/pages/Login.jsx. It should have a
-phone number input, a "Send OTP" button that calls POST /api/auth/otp/send, then
-an OTP input and "Verify" button that calls POST /api/auth/otp/verify, stores the
-returned JWT, and redirects to /.
+phone number input, a "Send OTP" button that calls POST /api/auth/otp/send via apiClient,
+then an OTP input and "Verify" button that calls POST /api/auth/otp/verify, stores the
+returned JWT, and redirects to /. Add Google Login button calling POST /api/auth/google.
 ```
 
 ```
-Create an AuthContext in frontend/src/features/auth/ that holds the current user
+Create an AuthContext in frontend/src/features/auth/AuthContext.jsx that holds the current user
 and JWT, exposes login/logout functions, and persists the JWT to local storage.
 Wrap the app in this provider.
 ```
@@ -153,7 +140,7 @@ and update the current user's profile fields (name, email, profilePhoto).
 ```
 
 🔑 **EXTERNAL SERVICE — before continuing:**
-Enable the Geocoding API in your Google Cloud project and paste `GOOGLE_MAPS_API_KEY` into `.env`.
+Enable the Geocoding API in your Google Cloud project and paste `GOOGLE_MAPS_API_KEY` into `backend/.env`.
 
 ```
 Implement POST /api/rides in backend/ (protected, driver role only). Validate
@@ -171,30 +158,28 @@ Implement GET /api/rides/:id returning full ride details including driver profil
 
 ---
 
-## 6. Frontend — profile, ride creation, search (one component at a time)
+## 6. Frontend — profile, ride creation, search integration
 
 ```
 Create the Profile page in frontend/src/pages/Profile.jsx. Fetch the current
 user via GET /api/users/me and render an editable form (name, email, profile
-photo) that saves via PUT /api/users/me.
+photo) that saves via PUT /api/users/me using apiClient.
 ```
 
 ```
 Create a CreateRide form component in frontend/src/features/rides/CreateRideForm.jsx
 for drivers — inputs for origin, destination, date/time, seats, price — submitting
-to POST /api/rides. Show a success state with a link to the new ride's detail page.
+to POST /api/rides. Show a success state with a link to the new ride's detail page (/ride/:rideId).
 ```
 
 ```
-Create the Search page in frontend/src/pages/Search.jsx with origin/destination/date
-inputs calling GET /api/rides/search, and a RideCard component that renders each
-result (driver name, route, date, price, seats left) linking to /rides/:id.
+Integrate the Search page in frontend/src/pages/Search.jsx: read query parameters using useSearchParams, fetch matches from GET /api/rides/search using apiClient, and render RideCard components pointing to /ride/:rideId.
 ```
 
 ```
-Create the RideDetails page in frontend/src/pages/RideDetails.jsx, fetching
-GET /api/rides/:id and displaying full ride and driver info, with a "Book this ride"
-button that navigates to /booking/:id.
+Integrate the RideDetails page in frontend/src/pages/RideDetails.jsx: fetch details from
+GET /api/rides/:rideId using useParams and apiClient, render details, and add a "Book this ride"
+button that navigates to /booking/:bookingId.
 ```
 
 ---
@@ -214,7 +199,7 @@ restoring seatsAvailable on the ride.
 ```
 
 🔑 **EXTERNAL SERVICE — before continuing:**
-Create a Razorpay account (test mode is fine to start), and paste `RAZORPAY_KEY_ID` and `RAZORPAY_KEY_SECRET` into `.env`.
+Create a Razorpay account (test mode is fine to start), and paste `RAZORPAY_KEY_ID` and `RAZORPAY_KEY_SECRET` into `backend/.env`.
 
 ```
 Implement POST /api/payments/order in backend/, creating a Razorpay order for a
@@ -232,13 +217,12 @@ are missing from .env, stop and tell me rather than stubbing a fake success resp
 Create the Booking page in frontend/src/pages/Booking.jsx: a seat-count selector,
 a price summary, and a "Pay & Confirm" button that calls POST /api/bookings then
 POST /api/payments/order, opens the Razorpay checkout widget (using the public
-RAZORPAY_KEY_ID exposed via a frontend env var — tell me the exact var name you
-need me to set), and on success calls POST /api/payments/verify before redirecting
+RAZORPAY_KEY_ID exposed via a frontend env var — VITE_RAZORPAY_KEY_ID in .env.local), and on success calls POST /api/payments/verify before redirecting
 to a confirmation screen.
 ```
 
 ```
-Create a MyBookings component in frontend/src/features/bookings/ listing the
+Create a MyBookings component in frontend/src/features/bookings/MyBookings.jsx listing the
 current user's bookings (upcoming and past), fetched from a new
 GET /api/bookings/me endpoint you should also add to the backend, with a cancel
 button on upcoming bookings.
@@ -255,7 +239,7 @@ Update the target user's trustScore as a simple running average of their ratings
 ```
 
 🔑 **EXTERNAL SERVICE — before continuing:**
-Create a Firebase project, enable Cloud Messaging, and paste `FIREBASE_SERVER_KEY` (or the service-account JSON, whichever the agent asks for) into `.env`.
+Create a Firebase project, enable Cloud Messaging, and paste `FIREBASE_SERVER_KEY` (or the service-account JSON, whichever the agent asks for) into `backend/.env`.
 
 ```
 Add Firebase Cloud Messaging to backend/. Create a notifications service in
@@ -270,9 +254,9 @@ and skip the push rather than crashing the request.
 ## 10. Frontend — reviews
 
 ```
-Create a ReviewForm component in frontend/src/features/reviews/, shown on
+Create a ReviewForm component in frontend/src/features/reviews/ReviewForm.jsx, shown on
 completed ride details/bookings, submitting rating + comment to POST /api/reviews.
-Display existing reviews on the driver's public profile.
+Display existing reviews on the driver's public profile page.
 ```
 
 ---
@@ -298,7 +282,7 @@ them (e.g. AWS IAM console) instead of assuming defaults.
 Repeat the same pattern for each feature — backend endpoint first, then the matching frontend piece:
 
 🔑 **EXTERNAL SERVICE — before continuing:**
-Create a Cloudinary account and paste `CLOUDINARY_URL` (or `CLOUDINARY_CLOUD_NAME`/`API_KEY`/`API_SECRET`) into `.env`.
+Create a Cloudinary account and paste `CLOUDINARY_URL` (or `CLOUDINARY_CLOUD_NAME`/`API_KEY`/`API_SECRET`) into `backend/.env`.
 
 ```
 Implement POST /api/verification/id in backend/: accept a document upload,
@@ -324,8 +308,7 @@ receive them. This uses the same GOOGLE_MAPS_API_KEY already in .env — no new 
 ```
 Create a LiveTrackingMap component in frontend/ using the Google Maps JS SDK
 that joins the ride's socket room and renders the driver's live position.
-This needs GOOGLE_MAPS_API_KEY exposed as a frontend env var — tell me the
-exact variable name to set if it differs from the backend one.
+This needs VITE_GOOGLE_MAPS_API_KEY exposed as a frontend env var.
 ```
 ```
 Set up a chat namespace in backend/src/sockets/chat.js, persisting messages to

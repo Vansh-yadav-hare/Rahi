@@ -1,234 +1,171 @@
-import { redisClient } from '../config/redis.js'
-import User from '../models/User.js'
 import jwt from 'jsonwebtoken'
 import { OAuth2Client } from 'google-auth-library'
+import redisClient from '../config/redis.js'
+import User from '../models/User.js'
 
-/**
- * Generate a 6-digit numeric OTP
- */
-const generateOTP = () => {
-  return Math.floor(100000 + Math.random() * 900000).toString()
-}
+const googleClient = new OAuth2Client(process.env.GOOGLE_OAUTH_CLIENT_ID)
 
-/**
- * POST /api/auth/otp/send
- * Accepts: { phoneNumber }
- */
+// Send OTP function
 export const sendOTP = async (req, res) => {
+  const { phone } = req.body
+
+  if (!phone) {
+    return res.status(400).json({ message: 'Phone number is required' })
+  }
+
   try {
-    const { phoneNumber } = req.body
+    const rateLimitKey = `rate_limit:${phone}`
+    const otpKey = `otp:${phone}`
 
-    if (!phoneNumber || typeof phoneNumber !== 'string' || phoneNumber.trim() === '') {
-      return res.status(400).json({ error: 'Valid phone number is required' })
+    // 1. Rate limit check (60s)
+    const rateLimitExists = await redisClient.get(rateLimitKey)
+    if (rateLimitExists) {
+      return res.status(429).json({ message: 'Please wait 60 seconds between OTP requests' })
     }
 
-    const sanitizedPhone = phoneNumber.trim()
-    const rateLimitKey = `otp:rate:${sanitizedPhone}`
-    const otpKey = `otp:${sanitizedPhone}`
+    // 2. Generate random 6-digit OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString()
 
-    // Check rate limit: 1 request per phone number per 60 seconds
-    const isRateLimited = await redisClient.get(rateLimitKey)
-    if (isRateLimited) {
-      return res.status(429).json({
-        error: 'Too many requests. Please wait 60 seconds before requesting another OTP.',
-      })
-    }
-
-    // Generate and store OTP
-    const otp = generateOTP()
-
-    // Store OTP in Redis for 5 minutes (300 seconds)
+    // 3. Store OTP (5-minute TTL) and set rate limit key (60-second TTL)
     await redisClient.set(otpKey, otp, { EX: 300 })
+    await redisClient.set(rateLimitKey, 'true', { EX: 60 })
 
-    // Set rate limit cooldown for 60 seconds
-    await redisClient.set(rateLimitKey, '1', { EX: 60 })
+    // Log the OTP to console (demo environment)
+    console.log(`[AUTH] Generated OTP for ${phone}: ${otp}`)
 
-    // Log the OTP to the console instead of sending SMS (Phase 1 rule)
-    console.log(`\n========================================\n[SMS OTP] To: ${sanitizedPhone}\nOTP: ${otp}\n========================================\n`)
-
-    return res.status(200).json({ message: 'OTP sent successfully' })
+    return res.status(200).json({ message: 'OTP sent successfully (check server logs)' })
   } catch (error) {
-    console.error('Error in sendOTP:', error)
-    return res.status(500).json({ error: 'Internal server error while sending OTP' })
+    console.error(`Send OTP Error: ${error.message}`)
+    return res.status(500).json({ message: 'Failed to send OTP' })
   }
 }
 
-/**
- * POST /api/auth/otp/verify
- * Accepts: { phoneNumber, otp }
- */
+// Verify OTP function
 export const verifyOTP = async (req, res) => {
+  const { phone, otp } = req.body
+
+  if (!phone || !otp) {
+    return res.status(400).json({ message: 'Phone number and OTP are required' })
+  }
+
   try {
-    const { phoneNumber, otp } = req.body
+    const otpKey = `otp:${phone}`
+    const savedOtp = await redisClient.get(otpKey)
 
-    if (!phoneNumber || !otp) {
-      return res.status(400).json({ error: 'Phone number and OTP are required' })
+    if (!savedOtp || savedOtp !== otp) {
+      return res.status(400).json({ message: 'Invalid or expired OTP' })
     }
 
-    const sanitizedPhone = phoneNumber.trim()
-    const sanitizedOtp = otp.trim()
-    const otpKey = `otp:${sanitizedPhone}`
-
-    // Retrieve cached OTP from Redis
-    const cachedOtp = await redisClient.get(otpKey)
-
-    if (!cachedOtp) {
-      return res.status(400).json({ error: 'OTP has expired or does not exist' })
-    }
-
-    if (cachedOtp !== sanitizedOtp) {
-      return res.status(400).json({ error: 'Invalid OTP code provided' })
-    }
-
-    // OTP verified successfully -> clear it from Redis
+    // Clear the OTP key on success
     await redisClient.del(otpKey)
 
-    // Find or create the user in MongoDB
-    let user = await User.findOne({ phone: sanitizedPhone })
-    let isNewUser = false
-
+    // Find or create the user
+    let user = await User.findOne({ phone })
     if (!user) {
-      isNewUser = true
-      // Generate a default name since 'name' is required in User schema
-      const lastFour = sanitizedPhone.slice(-4) || 'User'
-      const defaultName = `User_${lastFour}`
-
-      user = new User({
-        name: defaultName,
-        phone: sanitizedPhone,
-        role: 'passenger', // Default role
-      })
-
-      await user.save()
-      console.log(`Successfully created new user: ${defaultName} (Phone: ${sanitizedPhone})`)
+      user = await User.create({ phone, role: 'passenger' })
+      console.log(`[AUTH] Created new user for phone ${phone}`)
     }
 
-    // Generate signed JWT token
-    const tokenPayload = {
-      id: user._id,
-      phone: user.phone,
-      role: user.role,
-    }
-
-    const token = jwt.sign(tokenPayload, process.env.JWT_SECRET, {
-      expiresIn: '7d', // 7 days token expiration
-    })
-
-    return res.status(200).json({
-      message: isNewUser ? 'User registered successfully' : 'User verified successfully',
-      token,
-      user: {
-        id: user._id,
-        name: user.name,
-        phone: user.phone,
-        email: user.email,
-        role: user.role,
-        trustScore: user.trustScore,
-        isVerified: user.isVerified,
-        profilePhoto: user.profilePhoto,
-      },
-    })
-  } catch (error) {
-    console.error('Error in verifyOTP:', error)
-    return res.status(500).json({ error: 'Internal server error while verifying OTP' })
-  }
-}
-
-/**
- * POST /api/auth/google
- * Accepts: { idToken }
- */
-export const googleLogin = async (req, res) => {
-  try {
-    const { idToken } = req.body
-
-    if (!idToken || typeof idToken !== 'string') {
-      return res.status(400).json({ error: 'idToken is required' })
-    }
-
-    const clientId = process.env.GOOGLE_OAUTH_CLIENT_ID
-    if (!clientId) {
-      console.error('Error: GOOGLE_OAUTH_CLIENT_ID environment variable is missing')
-      return res.status(500).json({
-        error: 'Server authentication configuration error. Missing GOOGLE_OAUTH_CLIENT_ID.',
-      })
-    }
-
-    // Verify token with Google's OAuth client library
-    const client = new OAuth2Client(clientId)
-    let payload
-    try {
-      const ticket = await client.verifyIdToken({
-        idToken,
-        audience: clientId,
-      })
-      payload = ticket.getPayload()
-    } catch (verifyErr) {
-      console.error('Google ID Token verification failed:', verifyErr.message)
-      return res.status(400).json({ error: 'Invalid Google ID token' })
-    }
-
-    const oauthId = payload.sub
-    const email = payload.email
-    const name = payload.name
-    const profilePhoto = payload.picture
-
-    // Find or create matching user by oauthId
-    let user = await User.findOne({ oauthId })
-    let isNewUser = false
-
-    if (!user && email) {
-      // Check if user exists with the same email
-      user = await User.findOne({ email })
-      if (user) {
-        user.oauthId = oauthId
-        if (!user.profilePhoto) user.profilePhoto = profilePhoto
-        await user.save()
-        console.log(`Linked existing email account (${email}) with Google OAuthId: ${oauthId}`)
-      }
-    }
-
-    if (!user) {
-      isNewUser = true
-      user = new User({
-        name,
-        email,
-        oauthId,
-        profilePhoto,
-        role: 'passenger',
-      })
-      await user.save()
-      console.log(`Successfully created new OAuth user: ${name} (Email: ${email})`)
-    }
-
-    // Generate signed JWT token
-    const tokenPayload = {
-      id: user._id,
-      phone: user.phone,
-      role: user.role,
-    }
-
-    const token = jwt.sign(tokenPayload, process.env.JWT_SECRET, {
+    // Generate JWT
+    const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
       expiresIn: '7d',
     })
 
     return res.status(200).json({
-      message: isNewUser ? 'User registered successfully' : 'User verified successfully',
-      token,
+      message: 'Login successful',
       user: {
         id: user._id,
-        name: user.name,
         phone: user.phone,
+        name: user.name,
         email: user.email,
         role: user.role,
+        profilePhoto: user.profilePhoto,
         trustScore: user.trustScore,
         isVerified: user.isVerified,
-        profilePhoto: user.profilePhoto,
       },
+      token,
     })
   } catch (error) {
-    console.error('Error in googleLogin:', error)
-    return res.status(500).json({ error: 'Internal server error while executing Google login' })
+    console.error(`Verify OTP Error: ${error.message}`)
+    return res.status(500).json({ message: 'Failed to verify OTP' })
   }
 }
 
+// Google OAuth Login
+export const googleLogin = async (req, res) => {
+  const { idToken } = req.body
+
+  if (!idToken) {
+    return res.status(400).json({ message: 'Google ID token is required' })
+  }
+
+  if (!process.env.GOOGLE_OAUTH_CLIENT_ID) {
+    return res.status(500).json({
+      message: 'GOOGLE_OAUTH_CLIENT_ID is not configured in the backend environment variables',
+    })
+  }
+
+  try {
+    const ticket = await googleClient.verifyIdToken({
+      idToken,
+      audience: process.env.GOOGLE_OAUTH_CLIENT_ID,
+    })
+
+    const payload = ticket.getPayload()
+    const oauthId = payload['sub']
+    const email = payload['email']
+    const name = payload['name']
+    const picture = payload['picture']
+
+    // Find or create User by oauthId
+    let user = await User.findOne({ oauthId })
+
+    if (!user) {
+      // Check if user with this email already exists
+      if (email) {
+        user = await User.findOne({ email })
+      }
+
+      if (user) {
+        // Link Google ID to existing email account
+        user.oauthId = oauthId
+        if (!user.profilePhoto) user.profilePhoto = picture
+        await user.save()
+        console.log(`[AUTH] Linked Google credentials to user ${email}`)
+      } else {
+        // Create new user
+        user = await User.create({
+          name,
+          email,
+          oauthId,
+          profilePhoto: picture,
+          role: 'passenger',
+        })
+        console.log(`[AUTH] Created new Google user: ${email}`)
+      }
+    }
+
+    // Generate JWT
+    const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
+      expiresIn: '7d',
+    })
+
+    return res.status(200).json({
+      message: 'Google login successful',
+      user: {
+        id: user._id,
+        phone: user.phone,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        profilePhoto: user.profilePhoto,
+        trustScore: user.trustScore,
+        isVerified: user.isVerified,
+      },
+      token,
+    })
+  } catch (error) {
+    console.error(`Google Login Error: ${error.message}`)
+    return res.status(401).json({ message: 'Google OAuth token verification failed' })
+  }
+}

@@ -125,7 +125,42 @@ To support platform listings, bookings, reviews, payments, and verifications, we
   * [routes/userRoutes.js](file:///c:/Users/vy111/OneDrive/Desktop/Rahi/backend/src/routes/userRoutes.js) - Routed `GET /me` and `PUT /me` protected by `authGuard` using the new profile controller handlers.
 
 ---
+---
 
+## 📅 Log Entry: August 1, 2026 (Frontend SPA Migration & Backend Rebuild)
 
+### 1. Frontend Migration from TypeScript/TanStack Start to JavaScript React SPA
+* **Framework/Tools:** Vite, React, `react-router-dom`, Axios, Tailwind CSS v4.
+* **Files Modified/Created:**
+  * [index.html](file:///c:/Users/vy111/OneDrive/Desktop/Rahi/frontend/index.html) - New SPA entry HTML configuration loading external Google Fonts and `/src/main.jsx`.
+  * [vite.config.js](file:///c:/Users/vy111/OneDrive/Desktop/Rahi/frontend/vite.config.js) - Standard React + Tailwind CSS v4 setup with `@` path alias support. Deleted typescript configuration.
+  * [main.jsx](file:///c:/Users/vy111/OneDrive/Desktop/Rahi/frontend/src/main.jsx) - SPA bootstrap rendering `<App />`.
+  * [App.jsx](file:///c:/Users/vy111/OneDrive/Desktop/Rahi/frontend/src/App.jsx) - Configured React Router routes (`/`, `/search`, `/offer`, `/safety`, `/ride/:rideId`) using `react-router-dom` interfaces.
+  * [src/services/apiClient.js](file:///c:/Users/vy111/OneDrive/Desktop/Rahi/frontend/src/services/apiClient.js) - Integrated Axios client instance supporting automatic retrieval and injection of local JWT `token` in Authorization header.
+  * Pages relocated under `pages/` and converted from `.tsx` to `.jsx` with all TS typings stripped:
+    * `Home.jsx`
+    * `Search.jsx` (utilizes `useSearchParams` hook)
+    * `Offer.jsx`
+    * `Safety.jsx`
+    * `RideDetails.jsx` (utilizes `useParams` hook)
+  * Cleaned up unused server files: Deleted `src/server.ts`, `src/start.ts`, `tsconfig.json`, `vite.config.ts`, `src/routes/` and legacy error-capture systems.
 
+### 2. Alignment of IDE Commands sequence
+* **Files Modified:**
+  * [ide-agent-commands (1).md](file:///c:/Users/vy111/OneDrive/Desktop/Rahi/ide-agent-commands%20%281%29.md) - Realigned routing structure paths (e.g., `/ride/:rideId`), JS hooks conventions (`useParams`, `useSearchParams`), and apiClient variables to fit the client-side SPA.
 
+### 3. Backend Complete Reset & Rebuild
+* **Framework/Tools:** Express, Mongoose, Redis, JSONWebToken, Google Auth library.
+* **Files Created/Modified:**
+  * Cleaned existing controllers, routes, and models under `src/` to prevent schema/path discrepancies.
+  - Re-implemented all Mongoose schemas under [models/](file:///c:/Users/vy111/OneDrive/Desktop/Rahi/backend/src/models):
+    - `User.js` (phone, email, oauthId, role enums, trustScore).
+    - `Ride.js` (driverId ref, origin, destination, seatsAvailable, price, active/completed status).
+    - `Booking.js` (rideId ref, passengerId ref, seatsBooked, confirmed/pending status, cancellationInfo).
+    - `Review.js`, `Payment.js`, `Verification.js` support structures.
+  - [controllers/authController.js](file:///c:/Users/vy111/OneDrive/Desktop/Rahi/backend/src/controllers/authController.js) & [routes/authRoutes.js](file:///c:/Users/vy111/OneDrive/Desktop/Rahi/backend/src/routes/authRoutes.js):
+    - OTP login validation rates limit rules using Upstash Redis.
+    - Google OAuth ID token verification using `google-auth-library`.
+  - [middleware/authGuard.js](file:///c:/Users/vy111/OneDrive/Desktop/Rahi/backend/src/middleware/authGuard.js) - Secure endpoint wrapper decrypting JWT.
+  - [controllers/userController.js](file:///c:/Users/vy111/OneDrive/Desktop/Rahi/backend/src/controllers/userController.js) & [routes/userRoutes.js](file:///c:/Users/vy111/OneDrive/Desktop/Rahi/backend/src/routes/userRoutes.js) - Wire up protected `GET /me` (profile read) and `PUT /me` (profile write).
+  - Verified local dev startup logs confirming successful connection diagnostics for MongoDB Atlas database, Redis client, and server health check routing.

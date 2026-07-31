@@ -8,18 +8,17 @@ const verificationSchema = new mongoose.Schema(
       required: true,
     },
     govIdDoc: {
-      type: String, // Storing Cloudinary secure URL
+      type: String, // URL to uploaded document
+      required: false,
     },
     faceMatchStatus: {
       type: String,
-      enum: ['pending', 'matched', 'mismatched'],
-      default: 'pending',
+      enum: ['pending', 'matched', 'failed', 'none'],
+      default: 'none',
     },
     vehicleDocs: {
-      registrationNumber: String,
-      licenseNumber: String,
-      insuranceDoc: String, // Cloudinary URL
-      vehicleModel: String,
+      type: [String], // URLs to vehicle papers
+      default: [],
     },
     status: {
       type: String,
@@ -33,6 +32,4 @@ const verificationSchema = new mongoose.Schema(
 )
 
 const Verification = mongoose.model('Verification', verificationSchema)
-
 export default Verification
-export { Verification }
