@@ -1,6 +1,7 @@
 import React from "react";
 import { BrowserRouter, Routes, Route, Link } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { AuthProvider } from "@/features/auth/AuthContext";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
 
@@ -9,28 +10,36 @@ import Search from "@/pages/Search";
 import Offer from "@/pages/Offer";
 import Safety from "@/pages/Safety";
 import RideDetails from "@/pages/RideDetails";
+import Login from "@/pages/Login";
+import Profile from "@/pages/Profile";
+import Booking from "@/pages/Booking";
 
 const queryClient = new QueryClient();
 
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
-        <div className="flex min-h-screen flex-col">
-          <SiteHeader />
-          <main className="flex-1">
-            <Routes>
-              <Route path="/" element={<Home />} />
-              <Route path="/search" element={<Search />} />
-              <Route path="/offer" element={<Offer />} />
-              <Route path="/safety" element={<Safety />} />
-              <Route path="/ride/:rideId" element={<RideDetails />} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </main>
-          <SiteFooter />
-        </div>
-      </BrowserRouter>
+      <AuthProvider>
+        <BrowserRouter>
+          <div className="flex min-h-screen flex-col">
+            <SiteHeader />
+            <main className="flex-1">
+              <Routes>
+                <Route path="/" element={<Home />} />
+                <Route path="/search" element={<Search />} />
+                <Route path="/offer" element={<Offer />} />
+                <Route path="/safety" element={<Safety />} />
+                <Route path="/ride/:rideId" element={<RideDetails />} />
+                <Route path="/login" element={<Login />} />
+                <Route path="/profile" element={<Profile />} />
+                <Route path="/booking/:bookingId" element={<Booking />} />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </main>
+            <SiteFooter />
+          </div>
+        </BrowserRouter>
+      </AuthProvider>
     </QueryClientProvider>
   );
 }
