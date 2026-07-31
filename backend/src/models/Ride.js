@@ -10,15 +10,14 @@ const rideSchema = new mongoose.Schema(
     origin: {
       type: String,
       required: true,
-      trim: true,
     },
     destination: {
       type: String,
       required: true,
-      trim: true,
     },
     route: {
-      type: mongoose.Schema.Types.Mixed, // Flexible type to store route path waypoints / encoded polyline
+      type: [String],
+      default: [],
     },
     dateTime: {
       type: Date,
@@ -46,6 +45,4 @@ const rideSchema = new mongoose.Schema(
 )
 
 const Ride = mongoose.model('Ride', rideSchema)
-
 export default Ride
-export { Ride }

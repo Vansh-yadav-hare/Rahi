@@ -4,24 +4,21 @@ const userSchema = new mongoose.Schema(
   {
     name: {
       type: String,
-      required: true,
-      trim: true,
+      required: false,
     },
     phone: {
       type: String,
       unique: true,
       sparse: true,
-      trim: true,
     },
     email: {
       type: String,
       unique: true,
       sparse: true,
-      trim: true,
-      lowercase: true,
     },
     passwordHash: {
       type: String,
+      required: false,
     },
     oauthId: {
       type: String,
@@ -35,6 +32,7 @@ const userSchema = new mongoose.Schema(
     },
     profilePhoto: {
       type: String,
+      required: false,
     },
     trustScore: {
       type: Number,
@@ -51,6 +49,4 @@ const userSchema = new mongoose.Schema(
 )
 
 const User = mongoose.model('User', userSchema)
-
 export default User
-export { User }

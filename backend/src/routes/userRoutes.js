@@ -1,12 +1,10 @@
 import express from 'express'
+import { getMe, updateMe } from '../controllers/userController.js'
 import authGuard from '../middleware/authGuard.js'
-import { getProfile, updateProfile } from '../controllers/userController.js'
 
 const router = express.Router()
 
-// Profile routes (both protected by authGuard)
-router.get('/me', authGuard, getProfile)
-router.put('/me', authGuard, updateProfile)
+router.get('/me', authGuard, getMe)
+router.put('/me', authGuard, updateMe)
 
 export default router
-export { router }

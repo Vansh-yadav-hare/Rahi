@@ -25,7 +25,7 @@ const reviewSchema = new mongoose.Schema(
     },
     comment: {
       type: String,
-      trim: true,
+      required: false,
     },
   },
   {
@@ -34,6 +34,4 @@ const reviewSchema = new mongoose.Schema(
 )
 
 const Review = mongoose.model('Review', reviewSchema)
-
 export default Review
-export { Review }

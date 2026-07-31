@@ -23,7 +23,8 @@ const bookingSchema = new mongoose.Schema(
       default: 'pending',
     },
     paymentId: {
-      type: String, // Can store the payment gateway transaction reference / Razorpay payment ID
+      type: String,
+      required: false,
     },
     cancellationInfo: {
       reason: String,
@@ -37,6 +38,4 @@ const bookingSchema = new mongoose.Schema(
 )
 
 const Booking = mongoose.model('Booking', bookingSchema)
-
 export default Booking
-export { Booking }
