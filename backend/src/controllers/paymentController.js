@@ -2,6 +2,7 @@ import crypto from 'crypto'
 import { Buffer } from 'buffer'
 import Booking from '../models/Booking.js'
 import Payment from '../models/Payment.js'
+import { sendPush } from '../services/notificationService.js'
 
 /**
  * Creates a Razorpay payment order for a booking.
@@ -155,6 +156,9 @@ export const verifyPaymentSignature = async (req, res) => {
     if (!booking) {
       return res.status(404).json({ message: 'Booking not found.' })
     }
+
+    // Send push notification to passenger (non-blocking)
+    sendPush(booking.passengerId, 'Booking Confirmed', 'Your payment was successful and your booking is confirmed!')
 
     return res.status(200).json({
       message: 'Payment verified and booking confirmed successfully.',

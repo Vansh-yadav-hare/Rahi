@@ -22,7 +22,7 @@ export const getMe = async (req, res) => {
 
 // Update current user profile
 export const updateMe = async (req, res) => {
-  const { name, email, profilePhoto, role } = req.body
+  const { name, email, profilePhoto, role, fcmToken } = req.body
 
   try {
     const user = req.user
@@ -30,6 +30,7 @@ export const updateMe = async (req, res) => {
     if (name !== undefined) user.name = name
     if (email !== undefined) user.email = email
     if (profilePhoto !== undefined) user.profilePhoto = profilePhoto
+    if (fcmToken !== undefined) user.fcmToken = fcmToken
     if (role !== undefined) {
       if (!['passenger', 'driver', 'both'].includes(role)) {
         return res.status(400).json({ message: 'Invalid role assignment' })
@@ -51,6 +52,7 @@ export const updateMe = async (req, res) => {
         profilePhoto: user.profilePhoto,
         trustScore: user.trustScore,
         isVerified: user.isVerified,
+        fcmToken: user.fcmToken,
       },
     })
   } catch (error) {

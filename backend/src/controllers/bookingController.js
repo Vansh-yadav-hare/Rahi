@@ -1,6 +1,7 @@
 import mongoose from 'mongoose'
 import Booking from '../models/Booking.js'
 import Ride from '../models/Ride.js'
+import { sendPush } from '../services/notificationService.js'
 
 /**
  * Creates a new booking.
@@ -53,6 +54,10 @@ export const createBooking = async (req, res) => {
     await session.commitTransaction()
     session.endSession()
 
+    // Send push notifications (non-blocking)
+    sendPush(passengerId, 'Booking Created', `Your booking for ${seatsBooked} seat(s) has been created successfully.`)
+    sendPush(ride.driverId, 'New Booking', `A passenger has booked ${seatsBooked} seat(s) on your ride.`)
+
     return res.status(201).json({
       message: 'Booking created successfully (via Transaction)',
       booking: booking[0],
@@ -89,6 +94,10 @@ export const createBooking = async (req, res) => {
           seatsBooked,
           status: 'confirmed',
         })
+
+        // Send push notifications (non-blocking)
+        sendPush(passengerId, 'Booking Created', `Your booking for ${seatsBooked} seat(s) has been created successfully.`)
+        sendPush(updatedRide.driverId, 'New Booking', `A passenger has booked ${seatsBooked} seat(s) on your ride.`)
 
         return res.status(201).json({
           message: 'Booking created successfully (via Atomic Fallback)',
@@ -163,6 +172,10 @@ export const cancelBooking = async (req, res) => {
     // Restore available seats on the ride
     ride.seatsAvailable += booking.seatsBooked
     await ride.save()
+
+    // Send push notifications (non-blocking)
+    sendPush(booking.passengerId, 'Booking Cancelled', 'Your booking has been successfully cancelled.')
+    sendPush(ride.driverId, 'Booking Cancelled', 'A passenger has cancelled their booking for your ride.')
 
     return res.status(200).json({
       message: 'Booking successfully cancelled.',
