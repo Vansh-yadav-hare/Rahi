@@ -9,7 +9,7 @@ try {
   if (servers.length === 1 && servers[0] === '127.0.0.1') {
     dns.setServers(['8.8.8.8', '1.1.1.1'])
   }
-} catch (e) {
+} catch {
   // Ignore fallback configuration failure if not supported
 }
 

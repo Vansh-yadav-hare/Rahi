@@ -39,10 +39,18 @@ export function SiteHeader() {
         <div className="hidden items-center gap-2 md:flex">
           {isAuthenticated ? (
             <div className="flex items-center gap-3">
-              <Link to="/profile" className="flex size-9 items-center justify-center rounded-full bg-accent font-display text-sm font-bold border border-border/60 transition-smooth hover:border-primary/40">
-                {user?.name ? user.name[0] : (user?.phone ? user.phone.slice(-2) : "?")}
+              <Link
+                to="/profile"
+                className="flex size-9 items-center justify-center rounded-full bg-accent font-display text-sm font-bold border border-border/60 transition-smooth hover:border-primary/40"
+              >
+                {user?.name ? user.name[0] : user?.phone ? user.phone.slice(-2) : "?"}
               </Link>
-              <Button variant="ghost" size="sm" onClick={logout} className="text-destructive hover:bg-destructive/10 hover:text-destructive">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={logout}
+                className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+              >
                 Log out
               </Button>
             </div>
@@ -82,7 +90,7 @@ export function SiteHeader() {
                 {item.label}
               </Link>
             ))}
-            
+
             {isAuthenticated ? (
               <div className="mt-2 flex flex-col gap-2">
                 <Link
@@ -92,13 +100,23 @@ export function SiteHeader() {
                 >
                   My Profile
                 </Link>
-                <Button variant="outline" size="sm" onClick={() => { logout(); setOpen(false); }} className="w-full text-destructive">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    logout();
+                    setOpen(false);
+                  }}
+                  className="w-full text-destructive"
+                >
                   Log out
                 </Button>
               </div>
             ) : (
               <Button asChild variant="hero" size="sm" className="mt-2">
-                <Link to="/login" onClick={() => setOpen(false)}>Get started</Link>
+                <Link to="/login" onClick={() => setOpen(false)}>
+                  Get started
+                </Link>
               </Button>
             )}
           </nav>

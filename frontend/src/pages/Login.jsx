@@ -32,10 +32,11 @@ export default function Login() {
           callback: handleGoogleLoginSuccess,
         });
 
-        window.google.accounts.id.renderButton(
-          document.getElementById("google-signin-btn"),
-          { theme: "outline", size: "large", width: "380px" }
-        );
+        window.google.accounts.id.renderButton(document.getElementById("google-signin-btn"), {
+          theme: "outline",
+          size: "large",
+          width: "380px",
+        });
       } else {
         // Retry in 500ms if script is not fully loaded yet
         setTimeout(initGoogleOAuth, 500);
@@ -112,9 +113,13 @@ export default function Login() {
           <span className="flex size-12 items-center justify-center rounded-2xl bg-gradient-mint shadow-glow">
             <ShieldCheck className="size-6 text-primary-foreground" strokeWidth={2.4} />
           </span>
-          <h1 className="mt-5 font-display text-2xl font-bold tracking-tight">Welcome to RideSure</h1>
+          <h1 className="mt-5 font-display text-2xl font-bold tracking-tight">
+            Welcome to RideSure
+          </h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            {step === 1 ? "Enter your phone number to sign in or create an account" : "Enter the verification code sent to your phone"}
+            {step === 1
+              ? "Enter your phone number to sign in or create an account"
+              : "Enter the verification code sent to your phone"}
           </p>
         </div>
 
@@ -194,7 +199,10 @@ export default function Login() {
 
         {/* Google Authentication */}
         <div className="mt-6 flex justify-center">
-          <div id="google-signin-btn" className="w-full max-w-[380px] overflow-hidden flex justify-center"></div>
+          <div
+            id="google-signin-btn"
+            className="w-full max-w-[380px] overflow-hidden flex justify-center"
+          ></div>
         </div>
       </div>
     </div>
