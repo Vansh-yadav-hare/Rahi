@@ -15,7 +15,7 @@ export function SiteHeader() {
   const { user, isAuthenticated, logout } = useAuth();
 
   return (
-    <header className="sticky top-0 z-50 border-b border-border/60 bg-background/85 backdrop-blur-xl">
+    <header className="sticky top-0 z-50 border-b border-border/40 bg-background/30 backdrop-blur-md shadow-sm transition-smooth">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-5">
         <Link to="/" className="flex items-center gap-2">
           <span className="flex size-9 items-center justify-center rounded-xl bg-gradient-mint shadow-glow">
@@ -29,7 +29,7 @@ export function SiteHeader() {
             <Link
               key={item.to}
               to={item.to}
-              className="rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-smooth hover:bg-secondary hover:text-foreground"
+              className="rounded-lg px-3 py-2 text-sm font-semibold text-foreground/80 transition-smooth hover:bg-secondary/60 hover:text-foreground"
             >
               {item.label}
             </Link>
@@ -78,14 +78,14 @@ export function SiteHeader() {
       </div>
 
       {open && (
-        <div className="border-t border-border/60 bg-background px-5 py-3 md:hidden">
+        <div className="border-t border-border/40 bg-background/80 backdrop-blur-md px-5 py-3 md:hidden">
           <nav className="flex flex-col">
             {nav.map((item) => (
               <Link
                 key={item.to}
                 to={item.to}
                 onClick={() => setOpen(false)}
-                className="rounded-lg px-2 py-2.5 text-sm font-medium text-muted-foreground transition-smooth hover:text-foreground"
+                className="rounded-lg px-2 py-2.5 text-sm font-semibold text-foreground/80 transition-smooth hover:text-foreground"
               >
                 {item.label}
               </Link>
@@ -96,7 +96,7 @@ export function SiteHeader() {
                 <Link
                   to="/profile"
                   onClick={() => setOpen(false)}
-                  className="rounded-lg px-2 py-2 text-sm font-medium text-muted-foreground hover:text-foreground"
+                  className="rounded-lg px-2 py-2 text-sm font-semibold text-foreground/80 hover:text-foreground"
                 >
                   My Profile
                 </Link>
