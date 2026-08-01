@@ -1,4 +1,3 @@
-
 // Get current user profile
 export const getMe = async (req, res) => {
   try {

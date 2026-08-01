@@ -6,20 +6,21 @@ const columns = [
     links: [
       { label: "Find a ride", to: "/search" },
       { label: "Offer a ride", to: "/offer" },
-      { label: "Women-only rides", to: "/safety" }
-    ]
+      { label: "Women-only rides", to: "/safety" },
+    ],
   },
   {
     title: "Trust",
     links: [
       { label: "Safety centre", to: "/safety" },
       { label: "Verification", to: "/safety" },
-      { label: "Trust score", to: "/safety" }
-    ]
-  }
+      { label: "Trust score", to: "/safety" },
+    ],
+  },
 ];
 export function SiteFooter() {
-  return <footer className="border-t border-border bg-secondary/50">
+  return (
+    <footer className="border-t border-border bg-secondary/50">
       <div className="mx-auto grid max-w-6xl gap-10 px-5 py-14 md:grid-cols-[1.4fr_1fr_1fr]">
         <div>
           <div className="flex items-center gap-2">
@@ -34,24 +35,30 @@ export function SiteFooter() {
           </p>
         </div>
 
-        {columns.map((col) => <div key={col.title}>
+        {columns.map((col) => (
+          <div key={col.title}>
             <h4 className="text-sm font-semibold">{col.title}</h4>
             <ul className="mt-3 space-y-2">
-              {col.links.map((l) => <li key={l.label}>
+              {col.links.map((l) => (
+                <li key={l.label}>
                   <Link
-    to={l.to}
-    className="text-sm text-muted-foreground transition-smooth hover:text-foreground"
-  >
+                    to={l.to}
+                    className="text-sm text-muted-foreground transition-smooth hover:text-foreground"
+                  >
                     {l.label}
                   </Link>
-                </li>)}
+                </li>
+              ))}
             </ul>
-          </div>)}
+          </div>
+        ))}
       </div>
       <div className="border-t border-border/70 px-5 py-5">
         <p className="mx-auto max-w-6xl text-xs text-muted-foreground">
-          © {(/* @__PURE__ */ new Date()).getFullYear()} RideSure. Demo interface — rides shown are illustrative.
+          © {/* @__PURE__ */ new Date().getFullYear()} RideSure. Demo interface — rides shown are
+          illustrative.
         </p>
       </div>
-    </footer>;
+    </footer>
+  );
 }

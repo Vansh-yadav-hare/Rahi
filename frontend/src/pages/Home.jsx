@@ -7,7 +7,7 @@ import {
   Sparkles,
   MessagesSquare,
   ArrowRight,
-  Star
+  Star,
 } from "lucide-react";
 import heroImage from "@/assets/hero-ride.jpg";
 import { SearchForm } from "@/components/SearchForm";
@@ -19,53 +19,56 @@ const trustPillars = [
   {
     icon: ScanFace,
     title: "ID + face verified",
-    body: "Government ID, selfie match and vehicle documents checked before anyone can drive."
+    body: "Government ID, selfie match and vehicle documents checked before anyone can drive.",
   },
   {
     icon: Sparkles,
     title: "AI trust score",
-    body: "Every profile carries a live score from verification depth, ratings and ride history."
+    body: "Every profile carries a live score from verification depth, ratings and ride history.",
   },
   {
     icon: MapPinned,
     title: "Live trip tracking",
-    body: "Follow the route in real time and share a family tracking link for the whole trip."
+    body: "Follow the route in real time and share a family tracking link for the whole trip.",
   },
   {
     icon: Siren,
     title: "One-tap SOS",
-    body: "Emergency contacts and local help alerted instantly with your exact location."
+    body: "Emergency contacts and local help alerted instantly with your exact location.",
   },
   {
     icon: MessagesSquare,
     title: "Masked chat & calls",
-    body: "Coordinate pickup without sharing your number. Messages auto-translate."
+    body: "Coordinate pickup without sharing your number. Messages auto-translate.",
   },
   {
     icon: ShieldCheck,
     title: "Women-first options",
-    body: "Filter for women-only rides and drivers with reliability badges you can trust."
-  }
+    body: "Filter for women-only rides and drivers with reliability badges you can trust.",
+  },
 ];
 const steps = [
-  { n: "01", title: "Search your route", body: "Enter your cities and date \u2014 AI matches detours." },
+  {
+    n: "01",
+    title: "Search your route",
+    body: "Enter your cities and date \u2014 AI matches detours.",
+  },
   { n: "02", title: "Pick a trusted driver", body: "Compare trust scores, reviews and badges." },
   { n: "03", title: "Book and pay in-app", body: "Secure checkout with optional ride insurance." },
-  { n: "04", title: "Ride tracked end-to-end", body: "Live location, chat and SOS until arrival." }
+  { n: "04", title: "Ride tracked end-to-end", body: "Live location, chat and SOS until arrival." },
 ];
 export default function Home() {
-  return <div>
-      {
-    /* Hero */
-  }
+  return (
+    <div>
+      {/* Hero */}
       <section className="relative overflow-hidden bg-gradient-hero">
         <img
-    src={heroImage}
-    alt="Two travellers sharing a carpool ride along a coastal highway at sunset"
-    width={1600}
-    height={1200}
-    className="absolute inset-0 size-full object-cover opacity-30 mix-blend-luminosity"
-  />
+          src={heroImage}
+          alt="Two travellers sharing a carpool ride along a coastal highway at sunset"
+          width={1600}
+          height={1200}
+          className="absolute inset-0 size-full object-cover opacity-30 mix-blend-luminosity"
+        />
         <div className="relative mx-auto max-w-6xl px-5 pt-20 pb-16 md:pt-28 md:pb-24">
           <span className="inline-flex items-center gap-2 rounded-full border border-ink-foreground/20 bg-ink-foreground/10 px-3.5 py-1.5 text-xs font-medium text-ink-foreground backdrop-blur-md">
             <ShieldCheck className="size-3.5" /> Verified people. Every single ride.
@@ -87,20 +90,20 @@ export default function Home() {
 
           <dl className="mt-10 flex flex-wrap gap-x-10 gap-y-4">
             {[
-    ["1.2M", "verified rides"],
-    ["4.9/5", "average driver rating"],
-    ["98%", "trips tracked live"]
-  ].map(([value, label]) => <div key={label}>
+              ["1.2M", "verified rides"],
+              ["4.9/5", "average driver rating"],
+              ["98%", "trips tracked live"],
+            ].map(([value, label]) => (
+              <div key={label}>
                 <dt className="font-display text-2xl font-bold text-ink-foreground">{value}</dt>
                 <dd className="text-xs tracking-wide text-ink-foreground/60 uppercase">{label}</dd>
-              </div>)}
+              </div>
+            ))}
           </dl>
         </div>
       </section>
 
-      {
-    /* Trust pillars */
-  }
+      {/* Trust pillars */}
       <section className="mx-auto max-w-6xl px-5 py-20 md:py-28">
         <div className="max-w-2xl">
           <span className="text-xs font-semibold tracking-[0.18em] text-primary uppercase">
@@ -116,22 +119,22 @@ export default function Home() {
         </div>
 
         <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {trustPillars.map((p) => <div
-    key={p.title}
-    className="rounded-2xl border border-border bg-card p-6 shadow-soft transition-smooth hover:-translate-y-1 hover:shadow-lift"
-  >
+          {trustPillars.map((p) => (
+            <div
+              key={p.title}
+              className="rounded-2xl border border-border bg-card p-6 shadow-soft transition-smooth hover:-translate-y-1 hover:shadow-lift"
+            >
               <span className="flex size-11 items-center justify-center rounded-xl bg-accent">
                 <p.icon className="size-5 text-primary" strokeWidth={2.2} />
               </span>
               <h3 className="mt-5 font-display text-lg font-semibold">{p.title}</h3>
               <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{p.body}</p>
-            </div>)}
+            </div>
+          ))}
         </div>
       </section>
 
-      {
-    /* Popular rides */
-  }
+      {/* Popular rides */}
       <section className="border-y border-border bg-secondary/40 py-20 md:py-24">
         <div className="mx-auto max-w-6xl px-5">
           <div className="flex flex-wrap items-end justify-between gap-4">
@@ -149,33 +152,35 @@ export default function Home() {
           </div>
 
           <div className="mt-10 grid gap-4 lg:grid-cols-2">
-            {rides.slice(0, 4).map((ride) => <RideCard key={ride.id} ride={ride} />)}
+            {rides.slice(0, 4).map((ride) => (
+              <RideCard key={ride.id} ride={ride} />
+            ))}
           </div>
         </div>
       </section>
 
-      {
-    /* How it works */
-  }
+      {/* How it works */}
       <section className="mx-auto max-w-6xl px-5 py-20 md:py-28">
         <h2 className="font-display text-3xl font-bold md:text-4xl">How RideSure works</h2>
         <div className="mt-12 grid gap-8 md:grid-cols-4">
-          {steps.map((s) => <div key={s.n} className="border-t-2 border-primary/25 pt-5">
+          {steps.map((s) => (
+            <div key={s.n} className="border-t-2 border-primary/25 pt-5">
               <span className="font-display text-sm font-bold text-primary">{s.n}</span>
               <h3 className="mt-2 font-display text-lg font-semibold">{s.title}</h3>
               <p className="mt-2 text-sm text-muted-foreground">{s.body}</p>
-            </div>)}
+            </div>
+          ))}
         </div>
       </section>
 
-      {
-    /* Testimonial + CTA */
-  }
+      {/* Testimonial + CTA */}
       <section className="mx-auto max-w-6xl px-5 pb-24">
         <div className="grid gap-5 lg:grid-cols-[1.1fr_1fr]">
           <figure className="rounded-3xl border border-border bg-card p-8 shadow-soft">
             <div className="flex gap-1">
-              {Array.from({ length: 5 }).map((_, i) => <Star key={i} className="size-4 fill-trust text-trust" />)}
+              {Array.from({ length: 5 }).map((_, i) => (
+                <Star key={i} className="size-4 fill-trust text-trust" />
+              ))}
             </div>
             <blockquote className="mt-5 font-display text-xl leading-snug font-medium md:text-2xl">
               “I sent my mum the live tracking link before we left Pune. She watched the whole trip.
@@ -207,5 +212,6 @@ export default function Home() {
           </div>
         </div>
       </section>
-    </div>;
+    </div>
+  );
 }

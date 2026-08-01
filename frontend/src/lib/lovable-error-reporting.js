@@ -5,18 +5,23 @@ export function reportLovableError(error, context = {}) {
     {
       source: "react_error_boundary",
       route: window.location.pathname,
-      ...context
+      ...context,
     },
     {
       mechanism: "react_error_boundary",
       handled: false,
-      severity: "error"
-    }
+      severity: "error",
+    },
   );
-  const message = error instanceof Response ? `Response ${error.status}${error.url ? ` at ${error.url}` : ""}` : error instanceof Error ? error.message : String(error);
+  const message =
+    error instanceof Response
+      ? `Response ${error.status}${error.url ? ` at ${error.url}` : ""}`
+      : error instanceof Error
+        ? error.message
+        : String(error);
   window.__lovableReportRuntimeError?.({
     message,
     stack: error instanceof Error ? error.stack : void 0,
-    filename: window.location.pathname
+    filename: window.location.pathname,
   });
 }

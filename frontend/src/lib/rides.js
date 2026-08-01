@@ -19,10 +19,10 @@ export const rides = [
       trips: 214,
       verified: ["Govt ID", "Face match", "Vehicle docs"],
       car: "Hyundai Verna \xB7 White",
-      joined: "2023"
+      joined: "2023",
     },
     stops: ["Kengeri", "Ramanagara", "Mandya"],
-    perks: ["Live tracking", "Max 2 in back", "AC"]
+    perks: ["Live tracking", "Max 2 in back", "AC"],
   },
   {
     id: "pun-mum-0730",
@@ -44,10 +44,10 @@ export const rides = [
       trips: 388,
       verified: ["Govt ID", "Face match", "Vehicle docs", "Employer"],
       car: "Toyota Innova \xB7 Silver",
-      joined: "2022"
+      joined: "2022",
     },
     stops: ["Lonavala", "Panvel"],
-    perks: ["Women-only", "SOS enabled", "Luggage space"]
+    perks: ["Women-only", "SOS enabled", "Luggage space"],
   },
   {
     id: "del-jai-0731",
@@ -69,10 +69,10 @@ export const rides = [
       trips: 132,
       verified: ["Govt ID", "Vehicle docs"],
       car: "Mahindra XUV700 \xB7 Grey",
-      joined: "2024"
+      joined: "2024",
     },
     stops: ["Gurugram", "Behror", "Kotputli"],
-    perks: ["Live tracking", "Music on request"]
+    perks: ["Live tracking", "Music on request"],
   },
   {
     id: "hyd-vij-0731",
@@ -94,10 +94,10 @@ export const rides = [
       trips: 97,
       verified: ["Govt ID", "Face match"],
       car: "Honda City \xB7 Blue",
-      joined: "2024"
+      joined: "2024",
     },
     stops: ["Suryapet", "Nandigama"],
-    perks: ["Live tracking", "Pet friendly"]
+    perks: ["Live tracking", "Pet friendly"],
   },
   {
     id: "che-pon-0801",
@@ -119,10 +119,10 @@ export const rides = [
       trips: 61,
       verified: ["Govt ID", "Face match"],
       car: "Maruti Baleno \xB7 Red",
-      joined: "2025"
+      joined: "2025",
     },
     stops: ["Chengalpattu", "Tindivanam"],
-    perks: ["Coastal route", "AC"]
+    perks: ["Coastal route", "AC"],
   },
   {
     id: "ahm-udr-0801",
@@ -144,11 +144,11 @@ export const rides = [
       trips: 176,
       verified: ["Govt ID", "Face match", "Vehicle docs"],
       car: "Tata Nexon \xB7 Green",
-      joined: "2023"
+      joined: "2023",
     },
     stops: ["Himatnagar", "Shamlaji"],
-    perks: ["Women-only", "Family tracking link"]
-  }
+    perks: ["Women-only", "Family tracking link"],
+  },
 ];
 export function getRide(id) {
   return rides.find((r) => r.id === id);
