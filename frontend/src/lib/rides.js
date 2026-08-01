@@ -165,7 +165,7 @@ export function filterRides(from, to, womenOnly) {
 export function normalizeRide(apiRide) {
   if (!apiRide) return null;
   // If it's already in the frontend format (mock data), return as-is
-  if (apiRide.from && apiRide.to && apiRide.driver && typeof apiRide.driverId === 'undefined') {
+  if (apiRide.from && apiRide.to && apiRide.driver && typeof apiRide.driverId === "undefined") {
     return apiRide;
   }
 
@@ -173,7 +173,7 @@ export function normalizeRide(apiRide) {
   const departTimeStr = departureDate.toLocaleTimeString("en-IN", {
     hour: "2-digit",
     minute: "2-digit",
-    hour12: false
+    hour12: false,
   });
 
   // Fallback arrival calculation: departure + 3 hours
@@ -181,7 +181,7 @@ export function normalizeRide(apiRide) {
   const arriveTimeStr = arrivalDate.toLocaleTimeString("en-IN", {
     hour: "2-digit",
     minute: "2-digit",
-    hour12: false
+    hour12: false,
   });
 
   const getShortAddress = (fullAddress) => {
@@ -191,7 +191,14 @@ export function normalizeRide(apiRide) {
   };
 
   const driver = apiRide.driverId || {};
-  const initials = driver.name ? driver.name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2) : "?";
+  const initials = driver.name
+    ? driver.name
+        .split(" ")
+        .map((n) => n[0])
+        .join("")
+        .toUpperCase()
+        .slice(0, 2)
+    : "?";
 
   return {
     id: apiRide._id,
@@ -199,7 +206,11 @@ export function normalizeRide(apiRide) {
     to: getShortAddress(apiRide.destination?.address),
     fullFrom: apiRide.origin?.address,
     fullTo: apiRide.destination?.address,
-    date: departureDate.toLocaleDateString("en-IN", { weekday: 'short', day: 'numeric', month: 'short' }),
+    date: departureDate.toLocaleDateString("en-IN", {
+      weekday: "short",
+      day: "numeric",
+      month: "short",
+    }),
     departTime: departTimeStr,
     arriveTime: arriveTimeStr,
     duration: "3h 00m",
@@ -215,9 +226,9 @@ export function normalizeRide(apiRide) {
       trips: 12,
       verified: driver.isVerified ? ["Govt ID", "Face match"] : ["Govt ID"],
       car: "Verified Vehicle",
-      joined: "2026"
+      joined: "2026",
     },
     stops: apiRide.route || [],
-    perks: ["Live tracking", "AC"]
+    perks: ["Live tracking", "AC"],
   };
 }

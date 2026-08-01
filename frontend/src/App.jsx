@@ -13,6 +13,7 @@ import RideDetails from "@/pages/RideDetails";
 import Login from "@/pages/Login";
 import Profile from "@/pages/Profile";
 import Booking from "@/pages/Booking";
+import MyBookings from "@/features/bookings/MyBookings";
 
 const queryClient = new QueryClient();
 
@@ -32,7 +33,8 @@ export default function App() {
                 <Route path="/ride/:rideId" element={<RideDetails />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/profile" element={<Profile />} />
-                <Route path="/booking/:bookingId" element={<Booking />} />
+                <Route path="/booking/:rideId" element={<Booking />} />
+                <Route path="/my-bookings" element={<MyBookings />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </main>

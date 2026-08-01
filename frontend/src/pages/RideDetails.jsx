@@ -10,7 +10,7 @@ import {
   Star,
   Users,
   Loader2,
-  AlertCircle
+  AlertCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { TrustScore } from "@/components/TrustScore";
@@ -56,7 +56,9 @@ export default function RideDetails() {
     return (
       <div className="flex flex-col items-center justify-center p-36">
         <Loader2 className="size-10 animate-spin text-primary" />
-        <p className="mt-4 text-sm text-muted-foreground font-semibold">Retrieving ride details...</p>
+        <p className="mt-4 text-sm text-muted-foreground font-semibold">
+          Retrieving ride details...
+        </p>
       </div>
     );
   }
@@ -115,7 +117,9 @@ export default function RideDetails() {
                   <span className="relative flex flex-col items-center">
                     <span
                       className={`size-3 rounded-full ${
-                        i === 0 || i === arr.length - 1 ? "bg-primary ring-4 ring-primary/20" : "bg-border"
+                        i === 0 || i === arr.length - 1
+                          ? "bg-primary ring-4 ring-primary/20"
+                          : "bg-border"
                       }`}
                     />
                     {i < arr.length - 1 && (
@@ -155,7 +159,9 @@ export default function RideDetails() {
                 {ride.driver.initials}
               </span>
               <div className="mr-auto">
-                <h2 className="font-display text-xl font-bold text-foreground">{ride.driver.name}</h2>
+                <h2 className="font-display text-xl font-bold text-foreground">
+                  {ride.driver.name}
+                </h2>
                 <p className="flex items-center gap-1.5 text-xs text-muted-foreground mt-0.5 font-medium">
                   <Star className="size-3.5 fill-trust text-trust" />
                   {ride.driver.rating} · {ride.driver.trips} trips · member since{" "}
@@ -184,7 +190,10 @@ export default function RideDetails() {
               <Button variant="outline" className="border-border/60">
                 <MessagesSquare className="size-4" /> Message driver
               </Button>
-              <Button variant="ghost" className="text-destructive hover:text-destructive hover:bg-destructive/10">
+              <Button
+                variant="ghost"
+                className="text-destructive hover:text-destructive hover:bg-destructive/10"
+              >
                 <Siren className="size-4" /> Report a concern
               </Button>
             </div>
@@ -224,7 +233,7 @@ export default function RideDetails() {
             <Button variant="hero" size="xl" className="mt-7 w-full" onClick={handleBookRide}>
               {ride.instantBook ? "Book instantly" : "Request to book"}
             </Button>
-            
+
             <p className="mt-3 text-center text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
               Free cancellation up to 12h before departure.
             </p>

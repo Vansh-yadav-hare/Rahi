@@ -1,6 +1,14 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
-import { MapPin, CalendarDays, Users, IndianRupee, Loader2, CheckCircle2, AlertCircle } from "lucide-react";
+import {
+  MapPin,
+  CalendarDays,
+  Users,
+  IndianRupee,
+  Loader2,
+  CheckCircle2,
+  AlertCircle,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import apiClient from "@/services/apiClient";
 
@@ -46,7 +54,7 @@ export default function CreateRideForm() {
     const timer = setTimeout(async () => {
       try {
         const response = await fetch(
-          `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(origin)}&format=json&limit=5&addressdetails=1&countrycodes=in`
+          `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(origin)}&format=json&limit=5&addressdetails=1&countrycodes=in`,
         );
         if (response.ok) {
           const data = await response.json();
@@ -87,7 +95,7 @@ export default function CreateRideForm() {
     const timer = setTimeout(async () => {
       try {
         const response = await fetch(
-          `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(destination)}&format=json&limit=5&addressdetails=1&countrycodes=in`
+          `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(destination)}&format=json&limit=5&addressdetails=1&countrycodes=in`,
         );
         if (response.ok) {
           const data = await response.json();
@@ -165,7 +173,7 @@ export default function CreateRideForm() {
     } catch (err) {
       setError(
         err.response?.data?.message ||
-        "Failed to publish the ride. Please check that your locations are valid and you are registered as a driver."
+          "Failed to publish the ride. Please check that your locations are valid and you are registered as a driver.",
       );
     } finally {
       setLoading(false);
@@ -181,7 +189,8 @@ export default function CreateRideForm() {
         <h2 className="mt-6 font-display text-2xl font-bold">Ride Published Successfully!</h2>
         <p className="mt-3 text-sm text-muted-foreground leading-relaxed">
           Your ride from <strong className="text-foreground">{origin.split(",")[0]}</strong> to{" "}
-          <strong className="text-foreground">{destination.split(",")[0]}</strong> has been created and is now active for bookings.
+          <strong className="text-foreground">{destination.split(",")[0]}</strong> has been created
+          and is now active for bookings.
         </p>
         <div className="mt-8 flex flex-col gap-3">
           <Button asChild variant="hero" size="xl" className="w-full">

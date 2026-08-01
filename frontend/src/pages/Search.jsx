@@ -37,10 +37,10 @@ export default function SearchPage() {
           params: {
             from: from || undefined,
             to: to || undefined,
-            date: searchParams.get("date") || undefined
-          }
+            date: searchParams.get("date") || undefined,
+          },
         });
-        
+
         // Normalize the API results
         const normalized = response.data.map(normalizeRide);
         setApiRides(normalized);
@@ -75,13 +75,11 @@ export default function SearchPage() {
       <h1 className="font-display text-3xl font-bold md:text-4xl text-foreground">
         {from && to ? `${getShortAddress(from)} → ${getShortAddress(to)}` : "Find a ride"}
       </h1>
-      
+
       <p className="mt-2 text-muted-foreground text-sm">
-        {loading ? (
-          "Searching for verified rides..."
-        ) : (
-          `${displayedRides.length} verified ${displayedRides.length === 1 ? "ride" : "rides"} matching your criteria.`
-        )}
+        {loading
+          ? "Searching for verified rides..."
+          : `${displayedRides.length} verified ${displayedRides.length === 1 ? "ride" : "rides"} matching your criteria.`}
       </p>
 
       <div className="mt-6">
@@ -94,7 +92,7 @@ export default function SearchPage() {
           <h2 className="flex items-center gap-2 font-display text-sm font-bold text-foreground">
             <SlidersHorizontal className="size-4 text-primary" /> Filters
           </h2>
-          
+
           <ul className="mt-4 space-y-3.5 text-sm">
             {/* Trust score 90+ */}
             <li className="flex items-center gap-3">
@@ -159,7 +157,9 @@ export default function SearchPage() {
           {loading ? (
             <div className="flex flex-col items-center justify-center p-20 rounded-2xl border border-dashed border-border/40 bg-card/25 backdrop-blur-sm">
               <Loader2 className="size-8 animate-spin text-primary" />
-              <p className="mt-4 text-sm text-muted-foreground font-medium">Loading search results...</p>
+              <p className="mt-4 text-sm text-muted-foreground font-medium">
+                Loading search results...
+              </p>
             </div>
           ) : error ? (
             <div className="flex items-start gap-3 rounded-2xl bg-destructive/10 p-5 text-sm text-destructive border border-destructive/20">
@@ -173,9 +173,12 @@ export default function SearchPage() {
             displayedRides.map((ride) => <RideCard key={ride.id} ride={ride} />)
           ) : (
             <div className="rounded-2xl border border-dashed border-border/40 bg-card/25 backdrop-blur-sm p-12 text-center">
-              <p className="font-display text-lg font-bold text-foreground">No rides on this route yet</p>
+              <p className="font-display text-lg font-bold text-foreground">
+                No rides on this route yet
+              </p>
               <p className="mt-2 text-sm text-muted-foreground max-w-sm mx-auto leading-relaxed">
-                We couldn't find any active rides starting from your location. Try entering nearby cities or adjust your filter checklist.
+                We couldn't find any active rides starting from your location. Try entering nearby
+                cities or adjust your filter checklist.
               </p>
             </div>
           )}

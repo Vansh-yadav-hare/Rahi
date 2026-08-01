@@ -6,6 +6,7 @@ const router = express.Router()
 
 // Get current user's booking history
 router.get('/my-bookings', authGuard, getMyBookings)
+router.get('/me', authGuard, getMyBookings)
 
 // Create booking endpoint
 router.post('/', authGuard, createBooking)

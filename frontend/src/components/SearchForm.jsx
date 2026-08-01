@@ -40,7 +40,7 @@ export function SearchForm({ compact = false }) {
     const timer = setTimeout(async () => {
       try {
         const response = await fetch(
-          `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(from)}&format=json&limit=5&addressdetails=1&countrycodes=in`
+          `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(from)}&format=json&limit=5&addressdetails=1&countrycodes=in`,
         );
         if (response.ok) {
           const data = await response.json();
@@ -81,7 +81,7 @@ export function SearchForm({ compact = false }) {
     const timer = setTimeout(async () => {
       try {
         const response = await fetch(
-          `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(to)}&format=json&limit=5&addressdetails=1&countrycodes=in`
+          `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(to)}&format=json&limit=5&addressdetails=1&countrycodes=in`,
         );
         if (response.ok) {
           const data = await response.json();

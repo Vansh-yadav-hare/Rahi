@@ -118,27 +118,27 @@ export default function Home() {
               Six layers of trust behind every booking
             </h2>
             <p className="mt-3 text-muted-foreground">
-              Verification, prediction and real-time safety work together — from the moment you search
-              to the moment you arrive.
+              Verification, prediction and real-time safety work together — from the moment you
+              search to the moment you arrive.
             </p>
           </div>
 
           <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {trustPillars.map((p) => (
-            <div
-              key={p.title}
-              className="rounded-2xl border border-border/40 bg-card/45 backdrop-blur-md p-6 shadow-soft transition-smooth hover:-translate-y-1 hover:bg-card/65 hover:border-primary/30 hover:shadow-lift"
-            >
-              <span className="flex size-11 items-center justify-center rounded-xl bg-primary/10 border border-primary/20 shadow-glow/10">
-                <p.icon className="size-5 text-primary" strokeWidth={2.2} />
-              </span>
-              <h3 className="mt-5 font-display text-lg font-semibold">{p.title}</h3>
-              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{p.body}</p>
-            </div>
-          ))}
+            {trustPillars.map((p) => (
+              <div
+                key={p.title}
+                className="rounded-2xl border border-border/40 bg-card/45 backdrop-blur-md p-6 shadow-soft transition-smooth hover:-translate-y-1 hover:bg-card/65 hover:border-primary/30 hover:shadow-lift"
+              >
+                <span className="flex size-11 items-center justify-center rounded-xl bg-primary/10 border border-primary/20 shadow-glow/10">
+                  <p.icon className="size-5 text-primary" strokeWidth={2.2} />
+                </span>
+                <h3 className="mt-5 font-display text-lg font-semibold">{p.title}</h3>
+                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{p.body}</p>
+              </div>
+            ))}
+          </div>
         </div>
-      </div>
-    </section>
+      </section>
 
       {/* Popular rides */}
       <section className="border-y border-border bg-secondary/40 py-20 md:py-24">
