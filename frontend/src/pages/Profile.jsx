@@ -11,6 +11,7 @@ export default function Profile() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [profilePhoto, setProfilePhoto] = useState("");
+  const [role, setRole] = useState("passenger");
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -21,6 +22,7 @@ export default function Profile() {
       setName(user.name || "");
       setEmail(user.email || "");
       setProfilePhoto(user.profilePhoto || "");
+      setRole(user.role || "passenger");
     }
   }, [user]);
 
@@ -55,10 +57,11 @@ export default function Profile() {
         name,
         email,
         profilePhoto,
+        role,
       });
 
       // Update AuthContext state
-      updateUser(response.data.user || { ...user, name, email, profilePhoto });
+      updateUser(response.data.user || { ...user, name, email, profilePhoto, role });
       setSuccess("Profile settings updated successfully!");
     } catch (err) {
       setError(err.response?.data?.message || "Failed to update profile settings.");
@@ -192,6 +195,28 @@ export default function Profile() {
                 placeholder="Enter your email"
                 className="bg-transparent text-sm text-foreground outline-none w-full"
               />
+            </div>
+
+            {/* Account Role */}
+            <div className={fieldStyle}>
+              <span className="text-[10px] font-bold text-primary uppercase tracking-wide">
+                Account Role
+              </span>
+              <select
+                value={role}
+                onChange={(e) => setRole(e.target.value)}
+                className="bg-transparent text-sm text-foreground outline-none w-full cursor-pointer"
+              >
+                <option value="passenger" className="bg-card text-foreground">
+                  Passenger (Book rides only)
+                </option>
+                <option value="driver" className="bg-card text-foreground">
+                  Driver (Offer rides only)
+                </option>
+                <option value="both" className="bg-card text-foreground">
+                  Both (Passenger & Driver)
+                </option>
+              </select>
             </div>
           </div>
 
