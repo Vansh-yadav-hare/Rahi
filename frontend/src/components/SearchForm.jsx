@@ -20,14 +20,14 @@ export function SearchForm({ compact = false }) {
   }
 
   const field =
-    "flex flex-1 items-center gap-2 rounded-xl border border-border bg-card px-3.5 py-3 max-md:min-h-[3.25rem] max-md:px-4 max-md:py-3.5 touch-manipulation transition-smooth hover:border-primary/40 focus-within:border-primary/60 focus-within:ring-2 focus-within:ring-ring/30 focus-within:ring-offset-2 focus-within:ring-offset-background";
+    "flex flex-1 items-center gap-2 rounded-xl border border-border/40 bg-background/25 px-3.5 py-3 max-md:min-h-[3.25rem] max-md:px-4 max-md:py-3.5 touch-manipulation transition-smooth hover:bg-background/45 hover:border-primary/30 focus-within:bg-background/55 focus-within:border-primary/50 focus-within:ring-2 focus-within:ring-ring/20 focus-within:ring-offset-2 focus-within:ring-offset-background";
   return (
     <form
       onSubmit={onSubmit}
       className={
         compact
-          ? "flex flex-col gap-4 rounded-2xl border border-border bg-card p-4 max-md:p-5 shadow-soft md:flex-row md:items-center"
-          : "flex flex-col gap-4 rounded-3xl border border-border bg-card/95 p-4 max-md:p-5 shadow-lift backdrop-blur-xl md:flex-row md:items-center"
+          ? "flex flex-col gap-4 rounded-2xl border border-border/40 bg-card/30 p-4 max-md:p-5 shadow-soft backdrop-blur-md md:flex-row md:items-center"
+          : "flex flex-col gap-4 rounded-3xl border border-border/40 bg-card/30 p-4 max-md:p-5 shadow-lift backdrop-blur-md md:flex-row md:items-center"
       }
     >
       <label className={field}>
@@ -67,7 +67,11 @@ export function SearchForm({ compact = false }) {
         type="button"
         onClick={() => setWomenOnly((v) => !v)}
         aria-pressed={womenOnly}
-        className={`flex w-full md:w-auto items-center justify-center gap-2 rounded-xl border px-4 py-3 max-md:min-h-[3.25rem] max-md:px-5 max-md:py-3.5 text-sm font-medium touch-manipulation transition-smooth focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-royal-red/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background ${womenOnly ? "border-royal-red bg-royal-red text-royal-red-foreground shadow-soft hover:bg-royal-red/90" : "border-border bg-card text-muted-foreground hover:border-royal-red/40 hover:text-royal-red"}`}
+        className={`flex w-full md:w-auto items-center justify-center gap-2 rounded-xl border px-4 py-3 max-md:min-h-[3.25rem] max-md:px-5 max-md:py-3.5 text-sm font-semibold touch-manipulation transition-smooth focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-royal-red/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background ${
+          womenOnly
+            ? "border-royal-red bg-royal-red text-royal-red-foreground shadow-soft hover:bg-royal-red/90"
+            : "border-border/40 bg-background/25 text-foreground/80 hover:bg-background/45 hover:border-royal-red/40 hover:text-royal-red"
+        }`}
       >
         <Venus className="size-4" /> Women-only
       </button>

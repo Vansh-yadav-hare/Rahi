@@ -77,7 +77,7 @@ export default function Home() {
           <h1 className="mt-6 max-w-3xl font-display text-4xl leading-[1.05] font-bold text-ink-foreground md:text-6xl">
             Share the ride.
             <br />
-            Never the risk.
+            <span className="bg-gradient-mint bg-clip-text text-transparent">Never the risk.</span>
           </h1>
           <p className="mt-5 max-w-xl text-base text-ink-foreground/75 md:text-lg">
             RideSure pairs intercity carpooling with ID verification, live tracking and an AI trust
@@ -104,27 +104,32 @@ export default function Home() {
       </section>
 
       {/* Trust pillars */}
-      <section className="mx-auto max-w-6xl px-5 py-20 md:py-28">
-        <div className="max-w-2xl">
-          <span className="text-xs font-semibold tracking-[0.18em] text-primary uppercase">
-            Safety by design
-          </span>
-          <h2 className="mt-3 font-display text-3xl font-bold md:text-4xl">
-            Six layers of trust behind every booking
-          </h2>
-          <p className="mt-3 text-muted-foreground">
-            Verification, prediction and real-time safety work together — from the moment you search
-            to the moment you arrive.
-          </p>
-        </div>
+      <section className="relative overflow-hidden py-20 md:py-28">
+        {/* Glowing background blobs for glassmorphism refraction */}
+        <div className="pointer-events-none absolute top-12 left-12 -z-10 size-96 rounded-full bg-primary/8 blur-[100px] opacity-75" />
+        <div className="pointer-events-none absolute bottom-12 right-12 -z-10 size-80 rounded-full bg-trust/8 blur-[80px] opacity-75" />
 
-        <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="mx-auto max-w-6xl px-5">
+          <div className="max-w-2xl">
+            <span className="text-xs font-semibold tracking-[0.18em] text-primary uppercase">
+              Safety by design
+            </span>
+            <h2 className="mt-3 font-display text-3xl font-bold md:text-4xl">
+              Six layers of trust behind every booking
+            </h2>
+            <p className="mt-3 text-muted-foreground">
+              Verification, prediction and real-time safety work together — from the moment you search
+              to the moment you arrive.
+            </p>
+          </div>
+
+          <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {trustPillars.map((p) => (
             <div
               key={p.title}
-              className="rounded-2xl border border-border bg-card p-6 shadow-soft transition-smooth hover:-translate-y-1 hover:shadow-lift"
+              className="rounded-2xl border border-border/40 bg-card/45 backdrop-blur-md p-6 shadow-soft transition-smooth hover:-translate-y-1 hover:bg-card/65 hover:border-primary/30 hover:shadow-lift"
             >
-              <span className="flex size-11 items-center justify-center rounded-xl bg-accent">
+              <span className="flex size-11 items-center justify-center rounded-xl bg-primary/10 border border-primary/20 shadow-glow/10">
                 <p.icon className="size-5 text-primary" strokeWidth={2.2} />
               </span>
               <h3 className="mt-5 font-display text-lg font-semibold">{p.title}</h3>
@@ -132,7 +137,8 @@ export default function Home() {
             </div>
           ))}
         </div>
-      </section>
+      </div>
+    </section>
 
       {/* Popular rides */}
       <section className="border-y border-border bg-secondary/40 py-20 md:py-24">
@@ -176,7 +182,7 @@ export default function Home() {
       {/* Testimonial + CTA */}
       <section className="mx-auto max-w-6xl px-5 pb-24">
         <div className="grid gap-5 lg:grid-cols-[1.1fr_1fr]">
-          <figure className="rounded-3xl border border-border bg-card p-8 shadow-soft">
+          <figure className="rounded-3xl border border-border/40 bg-card/35 backdrop-blur-md p-8 shadow-soft">
             <div className="flex gap-1">
               {Array.from({ length: 5 }).map((_, i) => (
                 <Star key={i} className="size-4 fill-trust text-trust" />

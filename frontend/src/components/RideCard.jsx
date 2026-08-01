@@ -6,7 +6,7 @@ export function RideCard({ ride }) {
   return (
     <Link
       to={`/ride/${ride.id}`}
-      className="group block rounded-2xl border border-border bg-card p-5 shadow-soft transition-smooth hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-lift"
+      className="group block rounded-2xl border border-border/60 bg-card/90 p-5 shadow-soft transition-smooth hover:-translate-y-0.5 hover:border-primary/50 hover:bg-card hover:shadow-glow/15"
     >
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="min-w-0">
