@@ -161,3 +161,63 @@ export function filterRides(from, to, womenOnly) {
     return okFrom && okTo && okWomen;
   });
 }
+
+export function normalizeRide(apiRide) {
+  if (!apiRide) return null;
+  // If it's already in the frontend format (mock data), return as-is
+  if (apiRide.from && apiRide.to && apiRide.driver && typeof apiRide.driverId === 'undefined') {
+    return apiRide;
+  }
+
+  const departureDate = new Date(apiRide.dateTime);
+  const departTimeStr = departureDate.toLocaleTimeString("en-IN", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false
+  });
+
+  // Fallback arrival calculation: departure + 3 hours
+  const arrivalDate = new Date(departureDate.getTime() + 3 * 60 * 60 * 1000);
+  const arriveTimeStr = arrivalDate.toLocaleTimeString("en-IN", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false
+  });
+
+  const getShortAddress = (fullAddress) => {
+    if (!fullAddress) return "";
+    const parts = fullAddress.split(", ");
+    return parts.length > 0 ? parts[0] : fullAddress;
+  };
+
+  const driver = apiRide.driverId || {};
+  const initials = driver.name ? driver.name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2) : "?";
+
+  return {
+    id: apiRide._id,
+    from: getShortAddress(apiRide.origin?.address),
+    to: getShortAddress(apiRide.destination?.address),
+    fullFrom: apiRide.origin?.address,
+    fullTo: apiRide.destination?.address,
+    date: departureDate.toLocaleDateString("en-IN", { weekday: 'short', day: 'numeric', month: 'short' }),
+    departTime: departTimeStr,
+    arriveTime: arriveTimeStr,
+    duration: "3h 00m",
+    price: apiRide.price,
+    seatsAvailable: apiRide.seatsAvailable,
+    womenOnly: apiRide.womenOnly || false,
+    instantBook: apiRide.instantBook || false,
+    driver: {
+      name: driver.name || "Verified Driver",
+      initials: initials,
+      trustScore: driver.trustScore || 85,
+      rating: 4.8,
+      trips: 12,
+      verified: driver.isVerified ? ["Govt ID", "Face match"] : ["Govt ID"],
+      car: "Verified Vehicle",
+      joined: "2026"
+    },
+    stops: apiRide.route || [],
+    perks: ["Live tracking", "AC"]
+  };
+}

@@ -1,4 +1,5 @@
-import { useParams, Link } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import {
   ArrowRight,
   BadgeCheck,
@@ -8,50 +9,104 @@ import {
   Siren,
   Star,
   Users,
+  Loader2,
+  AlertCircle
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { TrustScore } from "@/components/TrustScore";
-import { getRide } from "@/lib/rides";
+import { normalizeRide } from "@/lib/rides";
+import apiClient from "@/services/apiClient";
 
 export default function RideDetails() {
   const { rideId } = useParams();
-  const ride = getRide(rideId);
+  const navigate = useNavigate();
+  const [ride, setRide] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  if (!ride) {
+  useEffect(() => {
+    const fetchRideDetails = async () => {
+      setLoading(true);
+      setError("");
+      try {
+        const response = await apiClient.get(`/rides/${rideId}`);
+        const normalized = normalizeRide(response.data);
+        setRide(normalized);
+      } catch (err) {
+        console.error("Get ride details error:", err);
+        setError(err.response?.data?.message || "Failed to retrieve ride details from the server.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (rideId) {
+      fetchRideDetails();
+    }
+  }, [rideId]);
+
+  const handleBookRide = () => {
+    // Generate a mock booking ID for Phase 6, which will route to `/booking/:bookingId`
+    // In Phase 7, this button will submit POST /api/bookings and get a real booking ID.
+    const mockBookingId = `mock-book-${ride.id}`;
+    navigate(`/booking/${mockBookingId}`);
+  };
+
+  if (loading) {
     return (
-      <div className="mx-auto max-w-6xl px-5 py-20 text-center">
-        <h2 className="font-display text-2xl font-bold">Ride not found</h2>
-        <p className="mt-2 text-muted-foreground">
-          This ride does not exist or has been completed.
+      <div className="flex flex-col items-center justify-center p-36">
+        <Loader2 className="size-10 animate-spin text-primary" />
+        <p className="mt-4 text-sm text-muted-foreground font-semibold">Retrieving ride details...</p>
+      </div>
+    );
+  }
+
+  if (error || !ride) {
+    return (
+      <div className="mx-auto max-w-xl px-5 py-20 text-center">
+        <div className="flex size-14 items-center justify-center rounded-2xl bg-destructive/10 text-destructive mx-auto">
+          <AlertCircle className="size-7" />
+        </div>
+        <h2 className="mt-6 font-display text-2xl font-bold text-foreground">Ride not found</h2>
+        <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
+          {error || "This ride does not exist or has been completed."}
         </p>
         <Link
           to="/search"
-          className="mt-6 inline-block text-sm text-primary transition-smooth hover:underline"
+          className="mt-6 inline-block text-sm font-semibold text-primary transition-smooth hover:underline"
         >
           ← Back to search results
         </Link>
       </div>
     );
   }
+
+  const getShortAddress = (fullAddress) => {
+    if (!fullAddress) return "";
+    const parts = fullAddress.split(", ");
+    return parts.length > 0 ? parts[0] : fullAddress;
+  };
+
   return (
     <div className="mx-auto max-w-6xl px-5 py-10 md:py-14">
       <Link
         to="/search"
-        className="text-sm text-muted-foreground transition-smooth hover:text-foreground"
+        className="text-sm font-semibold text-muted-foreground transition-smooth hover:text-foreground"
       >
         ← Back to results
       </Link>
 
       <div className="mt-6 grid gap-6 lg:grid-cols-[1.6fr_1fr]">
         <div className="space-y-6">
-          <div className="rounded-3xl border border-border bg-card p-7 shadow-soft">
+          {/* Main Card */}
+          <div className="rounded-3xl border border-border/40 bg-card/45 backdrop-blur-md p-7 shadow-soft">
             <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
               <span>{ride.date}</span>
               <span>·</span>
               <span>{ride.duration}</span>
             </div>
-            <h1 className="mt-2 flex flex-wrap items-center gap-3 font-display text-3xl font-bold md:text-4xl">
-              {ride.from} <ArrowRight className="size-6 text-primary" /> {ride.to}
+            <h1 className="mt-2 flex flex-wrap items-center gap-3 font-display text-3xl font-bold md:text-4xl text-foreground">
+              {ride.from} <ArrowRight className="size-6 text-primary animate-pulse" /> {ride.to}
             </h1>
 
             <ol className="mt-8 space-y-6">
@@ -59,31 +114,33 @@ export default function RideDetails() {
                 <li key={stop} className="relative flex gap-4 pl-1">
                   <span className="relative flex flex-col items-center">
                     <span
-                      className={`size-3 rounded-full ${i === 0 || i === arr.length - 1 ? "bg-primary" : "bg-border"}`}
+                      className={`size-3 rounded-full ${
+                        i === 0 || i === arr.length - 1 ? "bg-primary ring-4 ring-primary/20" : "bg-border"
+                      }`}
                     />
                     {i < arr.length - 1 && (
-                      <span className="absolute top-3 h-[calc(100%+1rem)] w-px bg-border" />
+                      <span className="absolute top-3 h-[calc(100%+1rem)] w-px bg-border/60" />
                     )}
                   </span>
                   <div className="-mt-1">
-                    <div className="font-medium">{stop}</div>
-                    <div className="text-xs text-muted-foreground">
+                    <div className="font-semibold text-sm text-foreground">{stop}</div>
+                    <div className="text-[11px] font-medium text-muted-foreground mt-0.5">
                       {i === 0
                         ? `Departure ${ride.departTime}`
                         : i === arr.length - 1
                           ? `Arrival ${ride.arriveTime}`
-                          : "Pickup point available"}
+                          : "Intermediate stop"}
                     </div>
                   </div>
                 </li>
               ))}
             </ol>
 
-            <div className="mt-8 flex flex-wrap gap-2 border-t border-border pt-6">
+            <div className="mt-8 flex flex-wrap gap-2 border-t border-border/30 pt-6">
               {ride.perks.map((p) => (
                 <span
                   key={p}
-                  className="rounded-full bg-secondary px-3 py-1.5 text-xs font-medium text-secondary-foreground"
+                  className="rounded-full bg-secondary/80 px-3 py-1.5 text-xs font-semibold text-secondary-foreground"
                 >
                   {p}
                 </span>
@@ -91,14 +148,15 @@ export default function RideDetails() {
             </div>
           </div>
 
-          <div className="rounded-3xl border border-border bg-card p-7 shadow-soft">
+          {/* Driver details Card */}
+          <div className="rounded-3xl border border-border/40 bg-card/45 backdrop-blur-md p-7 shadow-soft">
             <div className="flex flex-wrap items-center gap-4">
-              <span className="flex size-14 items-center justify-center rounded-full bg-accent font-display text-lg font-bold text-accent-foreground">
+              <span className="flex size-14 items-center justify-center rounded-full bg-accent font-display text-lg font-bold text-accent-foreground border border-border/60">
                 {ride.driver.initials}
               </span>
               <div className="mr-auto">
-                <h2 className="font-display text-xl font-semibold">{ride.driver.name}</h2>
-                <p className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                <h2 className="font-display text-xl font-bold text-foreground">{ride.driver.name}</h2>
+                <p className="flex items-center gap-1.5 text-xs text-muted-foreground mt-0.5 font-medium">
                   <Star className="size-3.5 fill-trust text-trust" />
                   {ride.driver.rating} · {ride.driver.trips} trips · member since{" "}
                   {ride.driver.joined}
@@ -111,68 +169,70 @@ export default function RideDetails() {
               {ride.driver.verified.map((v) => (
                 <span
                   key={v}
-                  className="inline-flex items-center gap-1.5 rounded-full border border-primary/25 bg-primary/8 px-3 py-1.5 text-xs font-medium text-primary"
+                  className="inline-flex items-center gap-1.5 rounded-full border border-primary/25 bg-primary/8 px-3 py-1.5 text-xs font-semibold text-primary"
                 >
                   <BadgeCheck className="size-3.5" /> {v} verified
                 </span>
               ))}
             </div>
 
-            <p className="mt-6 flex items-center gap-2 text-sm text-muted-foreground">
+            <p className="mt-6 flex items-center gap-2 text-sm text-muted-foreground font-medium">
               <Car className="size-4 text-primary" /> {ride.driver.car}
             </p>
 
-            <div className="mt-6 flex flex-wrap gap-3 border-t border-border pt-6">
-              <Button variant="outline">
+            <div className="mt-6 flex flex-wrap gap-3 border-t border-border/30 pt-6">
+              <Button variant="outline" className="border-border/60">
                 <MessagesSquare className="size-4" /> Message driver
               </Button>
-              <Button variant="ghost" className="text-destructive hover:text-destructive">
+              <Button variant="ghost" className="text-destructive hover:text-destructive hover:bg-destructive/10">
                 <Siren className="size-4" /> Report a concern
               </Button>
             </div>
           </div>
         </div>
 
+        {/* Pricing Card */}
         <aside className="h-fit lg:sticky lg:top-24">
-          <div className="rounded-3xl border border-border bg-card p-7 shadow-lift">
+          <div className="rounded-3xl border border-border/40 bg-card/45 backdrop-blur-md p-7 shadow-lift">
             <div className="flex items-end justify-between">
               <div>
-                <div className="font-display text-3xl font-bold">₹{ride.price}</div>
-                <div className="text-xs text-muted-foreground">per seat, all inclusive</div>
+                <div className="font-display text-3xl font-bold text-foreground">₹{ride.price}</div>
+                <div className="text-xs text-muted-foreground mt-0.5">per seat, all inclusive</div>
               </div>
-              <span className="inline-flex items-center gap-1 rounded-full bg-secondary px-2.5 py-1 text-xs font-medium text-secondary-foreground">
+              <span className="inline-flex items-center gap-1 rounded-full bg-secondary/80 px-2.5 py-1 text-xs font-semibold text-secondary-foreground">
                 <Users className="size-3.5" /> {ride.seatsAvailable} left
               </span>
             </div>
 
-            <div className="mt-6 space-y-3 text-sm">
+            <div className="mt-6 space-y-3.5 text-sm">
               <div className="flex items-center justify-between">
-                <span className="text-muted-foreground">Seats</span>
-                <span className="font-medium">1 passenger</span>
+                <span className="text-muted-foreground font-medium">Seats</span>
+                <span className="font-semibold text-foreground">1 passenger</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-muted-foreground">Pickup</span>
-                <span className="flex items-center gap-1 font-medium">
-                  <MapPin className="size-3.5 text-primary" /> {ride.stops[0] ?? ride.from}
+                <span className="text-muted-foreground font-medium">Pickup</span>
+                <span className="flex items-center gap-1 font-semibold text-foreground">
+                  <MapPin className="size-3.5 text-primary" /> {getShortAddress(ride.from)}
                 </span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-muted-foreground">Ride insurance</span>
-                <span className="font-medium">+₹29</span>
+                <span className="text-muted-foreground font-medium">Ride insurance</span>
+                <span className="font-semibold text-foreground">+₹29</span>
               </div>
             </div>
 
-            <Button variant="hero" size="xl" className="mt-7 w-full">
+            <Button variant="hero" size="xl" className="mt-7 w-full" onClick={handleBookRide}>
               {ride.instantBook ? "Book instantly" : "Request to book"}
             </Button>
-            <p className="mt-3 text-center text-xs text-muted-foreground">
+            
+            <p className="mt-3 text-center text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
               Free cancellation up to 12h before departure.
             </p>
           </div>
 
           <div className="mt-4 rounded-2xl border border-primary/20 bg-primary/5 p-5">
-            <p className="text-sm font-medium">Tracked from start to finish</p>
-            <p className="mt-1.5 text-xs text-muted-foreground">
+            <p className="text-sm font-semibold text-primary">Tracked from start to finish</p>
+            <p className="mt-1.5 text-xs text-muted-foreground leading-relaxed">
               Share a live link with family, chat in-app, and trigger SOS at any point in the trip.
             </p>
           </div>
