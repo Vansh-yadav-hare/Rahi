@@ -13,6 +13,7 @@ import {
 import { Button } from "@/components/ui/button";
 import apiClient from "@/services/apiClient";
 import { normalizeRide } from "@/lib/rides";
+import ReviewForm from "@/features/reviews/ReviewForm";
 
 export default function MyBookings() {
   const [bookings, setBookings] = useState([]);
@@ -22,6 +23,7 @@ export default function MyBookings() {
   const [cancellingId, setCancellingId] = useState(null);
   const [cancelReason, setCancelReason] = useState("");
   const [cancelSuccessMsg, setCancelSuccessMsg] = useState("");
+  const [activeReviewBookingId, setActiveReviewBookingId] = useState(null);
 
   const fetchBookings = async () => {
     setError("");
@@ -226,44 +228,81 @@ export default function MyBookings() {
             {pastBookings.map((b) => (
               <div
                 key={b._id}
-                className="rounded-2xl border border-border/30 bg-card/25 p-5 flex flex-col md:flex-row md:items-center justify-between gap-4"
+                className="rounded-2xl border border-border/30 bg-card/25 p-5 flex flex-col gap-4"
               >
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <span
-                      className={`inline-flex items-center rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide border ${
-                        b.status === "cancelled"
-                          ? "bg-destructive/10 border-destructive/25 text-destructive"
-                          : "bg-secondary border-border/60 text-muted-foreground"
-                      }`}
-                    >
-                      {b.status}
-                    </span>
-                    <span className="text-[10px] text-muted-foreground">
-                      {b.seatsBooked} {b.seatsBooked === 1 ? "seat" : "seats"} · Price: ₹
-                      {b.ride?.price * b.seatsBooked}
-                    </span>
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <span
+                        className={`inline-flex items-center rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide border ${
+                          b.status === "cancelled"
+                            ? "bg-destructive/10 border-destructive/25 text-destructive"
+                            : "bg-secondary border-border/60 text-muted-foreground"
+                        }`}
+                      >
+                        {b.status}
+                      </span>
+                      <span className="text-[10px] text-muted-foreground">
+                        {b.seatsBooked} {b.seatsBooked === 1 ? "seat" : "seats"} · Price: ₹
+                        {b.ride?.price * b.seatsBooked}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-2 text-xs font-semibold text-foreground/80">
+                      <span>{getShortAddress(b.ride?.from)}</span>
+                      <span className="text-muted-foreground">→</span>
+                      <span>{getShortAddress(b.ride?.to)}</span>
+                    </div>
+
+                    <div className="text-[10px] text-muted-foreground">
+                      Departure: {b.ride?.date} at {b.ride?.departTime}
+                    </div>
                   </div>
 
-                  <div className="flex items-center gap-2 text-xs font-semibold text-foreground/80">
-                    <span>{getShortAddress(b.ride?.from)}</span>
-                    <span className="text-muted-foreground">→</span>
-                    <span>{getShortAddress(b.ride?.to)}</span>
-                  </div>
+                  {b.status === "cancelled" && b.cancellationInfo && (
+                    <div className="rounded-xl bg-background/30 p-2.5 text-[10px] text-muted-foreground max-w-sm flex items-start gap-1.5 border border-border/20">
+                      <Info className="size-3.5 shrink-0 text-primary mt-0.5" />
+                      <div>
+                        <span className="font-semibold text-foreground block">Refund Details:</span>
+                        {b.cancellationInfo.refundAmount > 0
+                          ? `Refund of ₹${b.cancellationInfo.refundAmount} issued.`
+                          : "No refund issued (late cancellation)."}
+                      </div>
+                    </div>
+                  )}
 
-                  <div className="text-[10px] text-muted-foreground">
-                    Departure: {b.ride?.date} at {b.ride?.departTime}
-                  </div>
+                  {b.status !== "cancelled" && (
+                    <div className="flex items-center gap-2">
+                      {activeReviewBookingId !== b._id && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="border-border/60"
+                          onClick={() => setActiveReviewBookingId(b._id)}
+                        >
+                          Leave a Review
+                        </Button>
+                      )}
+                    </div>
+                  )}
                 </div>
 
-                {b.status === "cancelled" && b.cancellationInfo && (
-                  <div className="rounded-xl bg-background/30 p-2.5 text-[10px] text-muted-foreground max-w-sm flex items-start gap-1.5 border border-border/20">
-                    <Info className="size-3.5 shrink-0 text-primary mt-0.5" />
-                    <div>
-                      <span className="font-semibold text-foreground block">Refund Details:</span>
-                      {b.cancellationInfo.refundAmount > 0
-                        ? `Refund of ₹${b.cancellationInfo.refundAmount} issued.`
-                        : "No refund issued (late cancellation)."}
+                {activeReviewBookingId === b._id && b.status !== "cancelled" && (
+                  <div className="border-t border-border/20 pt-4 w-full">
+                    <ReviewForm
+                      rideId={b.rideId._id}
+                      toUserId={b.ride?.driver?.id}
+                      onSuccess={() => setActiveReviewBookingId(null)}
+                    />
+                    <div className="mt-2 text-right">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-xs text-muted-foreground hover:text-foreground"
+                        onClick={() => setActiveReviewBookingId(null)}
+                      >
+                        Cancel
+                      </Button>
                     </div>
                   </div>
                 )}
@@ -275,3 +314,4 @@ export default function MyBookings() {
     </div>
   );
 }
+

@@ -1,3 +1,5 @@
+import User from '../models/User.js'
+
 // Get current user profile
 export const getMe = async (req, res) => {
   try {
@@ -64,3 +66,27 @@ export const updateMe = async (req, res) => {
     return res.status(500).json({ message: 'Failed to update profile' })
   }
 }
+
+// Get public user profile by ID
+export const getPublicProfile = async (req, res) => {
+  const { id } = req.params
+  try {
+    const user = await User.findById(id)
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' })
+    }
+    return res.status(200).json({
+      id: user._id,
+      name: user.name,
+      role: user.role,
+      profilePhoto: user.profilePhoto,
+      trustScore: user.trustScore,
+      isVerified: user.isVerified,
+      createdAt: user.createdAt,
+    })
+  } catch (error) {
+    console.error(`Get Public Profile Error: ${error.message}`)
+    return res.status(500).json({ message: 'Failed to retrieve public profile' })
+  }
+}
+

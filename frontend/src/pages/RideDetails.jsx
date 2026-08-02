@@ -16,13 +16,19 @@ import { Button } from "@/components/ui/button";
 import { TrustScore } from "@/components/TrustScore";
 import { normalizeRide } from "@/lib/rides";
 import apiClient from "@/services/apiClient";
+import { useAuth } from "@/features/auth/AuthContext";
+import ReviewForm from "@/features/reviews/ReviewForm";
 
 export default function RideDetails() {
   const { rideId } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
+
   const [ride, setRide] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [hasBooking, setHasBooking] = useState(false);
+  const [isCompleted, setIsCompleted] = useState(false);
 
   useEffect(() => {
     const fetchRideDetails = async () => {
@@ -32,6 +38,25 @@ export default function RideDetails() {
         const response = await apiClient.get(`/rides/${rideId}`);
         const normalized = normalizeRide(response.data);
         setRide(normalized);
+
+        const completed = response.data.status === "completed" || new Date(response.data.dateTime) <= new Date();
+        setIsCompleted(completed);
+
+        // Check if user has a confirmed booking for this ride
+        const savedToken = localStorage.getItem("token");
+        if (savedToken) {
+          try {
+            const bookingsRes = await apiClient.get("/bookings/me");
+            const matched = bookingsRes.data.find(
+              (b) => b.rideId?._id === rideId && b.status === "confirmed"
+            );
+            if (matched) {
+              setHasBooking(true);
+            }
+          } catch (bErr) {
+            console.error("Failed to load user bookings in RideDetails:", bErr);
+          }
+        }
       } catch (err) {
         console.error("Get ride details error:", err);
         setError(err.response?.data?.message || "Failed to retrieve ride details from the server.");
@@ -46,10 +71,7 @@ export default function RideDetails() {
   }, [rideId]);
 
   const handleBookRide = () => {
-    // Generate a mock booking ID for Phase 6, which will route to `/booking/:bookingId`
-    // In Phase 7, this button will submit POST /api/bookings and get a real booking ID.
-    const mockBookingId = `mock-book-${ride.id}`;
-    navigate(`/booking/${mockBookingId}`);
+    navigate(`/booking/${ride.id}`);
   };
 
   if (loading) {
@@ -155,13 +177,25 @@ export default function RideDetails() {
           {/* Driver details Card */}
           <div className="rounded-3xl border border-border/40 bg-card/45 backdrop-blur-md p-7 shadow-soft">
             <div className="flex flex-wrap items-center gap-4">
-              <span className="flex size-14 items-center justify-center rounded-full bg-accent font-display text-lg font-bold text-accent-foreground border border-border/60">
-                {ride.driver.initials}
-              </span>
+              <Link
+                to={`/profile/${ride.driver.id}`}
+                className="flex size-14 items-center justify-center rounded-full bg-accent font-display text-lg font-bold text-accent-foreground border border-border/60 overflow-hidden hover:opacity-80 transition-opacity"
+              >
+                {ride.driver.profilePhoto && (ride.driver.profilePhoto.startsWith("data:") || ride.driver.profilePhoto.startsWith("http")) ? (
+                  <img src={ride.driver.profilePhoto} alt="Avatar" className="size-full object-cover" />
+                ) : ride.driver.profilePhoto && ride.driver.profilePhoto.length <= 4 ? (
+                  <span className="text-2xl">{ride.driver.profilePhoto}</span>
+                ) : (
+                  <span>{ride.driver.initials}</span>
+                )}
+              </Link>
               <div className="mr-auto">
-                <h2 className="font-display text-xl font-bold text-foreground">
+                <Link
+                  to={`/profile/${ride.driver.id}`}
+                  className="font-display text-xl font-bold text-foreground hover:text-primary transition-colors block"
+                >
                   {ride.driver.name}
-                </h2>
+                </Link>
                 <p className="flex items-center gap-1.5 text-xs text-muted-foreground mt-0.5 font-medium">
                   <Star className="size-3.5 fill-trust text-trust" />
                   {ride.driver.rating} · {ride.driver.trips} trips · member since{" "}
@@ -198,6 +232,19 @@ export default function RideDetails() {
               </Button>
             </div>
           </div>
+
+          {/* Review section for completed rides */}
+          {isCompleted && hasBooking && (
+            <div className="mt-6">
+              <ReviewForm
+                rideId={rideId}
+                toUserId={ride.driver.id}
+                onSuccess={() => {
+                  console.log("Review submitted successfully");
+                }}
+              />
+            </div>
+          )}
         </div>
 
         {/* Pricing Card */}
@@ -230,8 +277,14 @@ export default function RideDetails() {
               </div>
             </div>
 
-            <Button variant="hero" size="xl" className="mt-7 w-full" onClick={handleBookRide}>
-              {ride.instantBook ? "Book instantly" : "Request to book"}
+            <Button
+              variant="hero"
+              size="xl"
+              className="mt-7 w-full"
+              onClick={handleBookRide}
+              disabled={isCompleted}
+            >
+              {isCompleted ? "Ride completed" : ride.instantBook ? "Book instantly" : "Request to book"}
             </Button>
 
             <p className="mt-3 text-center text-[10px] font-medium text-muted-foreground uppercase tracking-wider">

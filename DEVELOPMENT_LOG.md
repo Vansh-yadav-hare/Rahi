@@ -164,3 +164,56 @@ To support platform listings, bookings, reviews, payments, and verifications, we
   - [middleware/authGuard.js](file:///c:/Users/vy111/OneDrive/Desktop/Rahi/backend/src/middleware/authGuard.js) - Secure endpoint wrapper decrypting JWT.
   - [controllers/userController.js](file:///c:/Users/vy111/OneDrive/Desktop/Rahi/backend/src/controllers/userController.js) & [routes/userRoutes.js](file:///c:/Users/vy111/OneDrive/Desktop/Rahi/backend/src/routes/userRoutes.js) - Wire up protected `GET /me` (profile read) and `PUT /me` (profile write).
   - Verified local dev startup logs confirming successful connection diagnostics for MongoDB Atlas database, Redis client, and server health check routing.
+
+---
+
+## 📅 Log Entry: August 1, 2026 (Ride & Booking Systems, Razorpay Payments, & Profile Role Selector)
+
+This entry details the new features and logic implemented by AnmolPrajapati today following the monorepo rebuild:
+
+### 1. Connection Robustness & Geocoding Service
+* **Framework/Tools:** Upstash Redis / In-Memory Fallback, OpenStreetMap Nominatim API, Fetch client.
+* **Files Created/Modified:**
+  * [backend/src/config/redis.js](file:///c:/Users/vy111/OneDrive/Desktop/Rahi/backend/src/config/redis.js) - Implemented a runtime in-memory caching client fallback that activates if external Upstash Redis connections fail, securing local development diagnostics.
+  * [backend/src/services/geocodingService.js](file:///c:/Users/vy111/OneDrive/Desktop/Rahi/backend/src/services/geocodingService.js) - Created helper utility utilizing the OpenStreetMap Nominatim search endpoint (`https://nominatim.openstreetmap.org/search`) with a custom User-Agent to validate addresses and resolve coordinates.
+
+### 2. Ride Management & OpenStreetMap Autocomplete
+* **Framework/Tools:** Nominatim API, Regex text matching, React custom hooks.
+* **Files Created/Modified:**
+  * [backend/src/controllers/rideController.js](file:///c:/Users/vy111/OneDrive/Desktop/Rahi/backend/src/controllers/rideController.js) & [backend/src/routes/rideRoutes.js](file:///c:/Users/vy111/OneDrive/Desktop/Rahi/backend/src/routes/rideRoutes.js) - Created handlers and endpoints:
+    * `POST /api/rides` - Securely validates origin/destination coords via the geocoding service and persists ride listings (exclusive to `driver` and `both` roles).
+    * `GET /api/rides/search` - Searches active rides sorting by ascending `dateTime` through case-insensitive MongoDB regex match on origin and destination addresses.
+    * `GET /api/rides/:id` - Returns ride details populated with driver profile information.
+  * [frontend/src/components/SearchForm.jsx](file:///c:/Users/vy111/OneDrive/Desktop/Rahi/frontend/src/components/SearchForm.jsx) - Added real-time autocomplete suggestions utilizing the OSM Nominatim API to show coordinate-backed search hints.
+  * [frontend/src/features/rides/CreateRideForm.jsx](file:///c:/Users/vy111/OneDrive/Desktop/Rahi/frontend/src/features/rides/CreateRideForm.jsx) & [frontend/src/pages/Offer.jsx](file:///c:/Users/vy111/OneDrive/Desktop/Rahi/frontend/src/pages/Offer.jsx) - Scaffolded driver form fields (origin, destination, date, seats, price) integrated with `POST /api/rides`.
+  * [frontend/src/pages/Search.jsx](file:///c:/Users/vy111/OneDrive/Desktop/Rahi/frontend/src/pages/Search.jsx) & [frontend/src/pages/RideDetails.jsx](file:///c:/Users/vy111/OneDrive/Desktop/Rahi/frontend/src/pages/RideDetails.jsx) - Updated page logic to load rides based on query searches and IDs dynamically.
+
+### 3. Booking Transactions & Cancellation Policy
+* **Framework/Tools:** MongoDB Transaction Sessions, Atomic Fallback Queries.
+* **Files Created/Modified:**
+  * [backend/src/controllers/bookingController.js](file:///c:/Users/vy111/OneDrive/Desktop/Rahi/backend/src/controllers/bookingController.js) & [backend/src/routes/bookingRoutes.js](file:///c:/Users/vy111/OneDrive/Desktop/Rahi/backend/src/routes/bookingRoutes.js) - Added secure booking management:
+    * `POST /api/bookings` - Employs a transaction session to atomically decrement available seats and verify capacity. Implements an atomic `findOneAndUpdate` fallback mechanism for standalone Mongo environments lacking replica set transactions.
+    * `PUT /api/bookings/:id/cancel` - Enforces a late cancellation policy: grants full refunds if cancelled >= 2 hours prior to departure, returning 0 refund if cancelled later. Restores freed seat availability to the ride.
+    * `GET /api/bookings/me` - Exposes passenger-scoped ride histories.
+  * [frontend/src/features/bookings/MyBookings.jsx](file:///c:/Users/vy111/OneDrive/Desktop/Rahi/frontend/src/features/bookings/MyBookings.jsx) - Added dashboard listing active, completed, and cancelled bookings with cancellation triggers.
+
+### 4. Razorpay Payments Integration
+* **Framework/Tools:** Razorpay API Direct REST Calls, Crypto HMAC-SHA256 Signatures, Razorpay Web Checkout SDK.
+* **Files Created/Modified:**
+  * [backend/src/controllers/paymentController.js](file:///c:/Users/vy111/OneDrive/Desktop/Rahi/backend/src/controllers/paymentController.js) & [backend/src/routes/paymentRoutes.js](file:///c:/Users/vy111/OneDrive/Desktop/Rahi/backend/src/routes/paymentRoutes.js) - Created payment handling backend:
+    * `POST /api/payments/order` - Computes total pricing in paise and calls the Razorpay order creation endpoint (`https://api.razorpay.com/v1/orders`) using Basic authentication, saving order credentials in a pending `Payment` schema.
+    * `POST /api/payments/verify` - Verifies incoming webhooks or user client payment signatures using HMAC-SHA256 comparison. Confirms the Booking and marks the Payment status as completed on validation.
+  * [frontend/src/pages/Booking.jsx](file:///c:/Users/vy111/OneDrive/Desktop/Rahi/frontend/src/pages/Booking.jsx) - Integrates the Razorpay checkout overlay dynamically, triggering verify callback on success and executing redirects.
+
+### 5. Profile Upgrades & Role Selection
+* **Framework/Tools:** Base64 File Readers, Mongoose Role Enums.
+* **Files Created/Modified:**
+  * [frontend/src/pages/Profile.jsx](file:///c:/Users/vy111/OneDrive/Desktop/Rahi/frontend/src/pages/Profile.jsx) - Updated page logic to:
+    * Include a base64 profile avatar file uploader complete with circular CSS layout previews.
+    * Feature a new **Account Role** dropdown selector letting users switch their role between `passenger`, `driver`, or `both` dynamically, syncing changes to the backend.
+
+### 6. Design and Polish
+* **Framework/Tools:** Glassmorphism backdrop styles.
+* **Files Modified:**
+  * [frontend/src/pages/Home.jsx](file:///c:/Users/vy111/OneDrive/Desktop/Rahi/frontend/src/pages/Home.jsx) - Restyled the home safety pillars with vibrant background glow circles and glass border styles.
+  * [frontend/src/components/SiteHeader.jsx](file:///c:/Users/vy111/OneDrive/Desktop/Rahi/frontend/src/components/SiteHeader.jsx) - Enhanced contrast and font readability on the layout header.

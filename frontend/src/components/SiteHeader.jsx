@@ -40,6 +40,12 @@ export function SiteHeader() {
           {isAuthenticated ? (
             <div className="flex items-center gap-3">
               <Link
+                to="/my-bookings"
+                className="rounded-lg px-3 py-2 text-sm font-semibold text-foreground/80 transition-smooth hover:bg-secondary/60 hover:text-foreground"
+              >
+                My Bookings
+              </Link>
+              <Link
                 to="/profile"
                 className="flex size-9 items-center justify-center rounded-full bg-accent font-display text-sm font-bold border border-border/60 transition-smooth hover:border-primary/40"
               >
@@ -93,6 +99,13 @@ export function SiteHeader() {
 
             {isAuthenticated ? (
               <div className="mt-2 flex flex-col gap-2">
+                <Link
+                  to="/my-bookings"
+                  onClick={() => setOpen(false)}
+                  className="rounded-lg px-2 py-2 text-sm font-semibold text-foreground/80 hover:text-foreground"
+                >
+                  My Bookings
+                </Link>
                 <Link
                   to="/profile"
                   onClick={() => setOpen(false)}

@@ -219,6 +219,7 @@ export function normalizeRide(apiRide) {
     womenOnly: apiRide.womenOnly || false,
     instantBook: apiRide.instantBook || false,
     driver: {
+      id: driver._id,
       name: driver.name || "Verified Driver",
       initials: initials,
       trustScore: driver.trustScore || 85,
@@ -227,6 +228,7 @@ export function normalizeRide(apiRide) {
       verified: driver.isVerified ? ["Govt ID", "Face match"] : ["Govt ID"],
       car: "Verified Vehicle",
       joined: "2026",
+      profilePhoto: driver.profilePhoto,
     },
     stops: apiRide.route || [],
     perks: ["Live tracking", "AC"],

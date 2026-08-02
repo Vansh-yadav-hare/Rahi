@@ -33,6 +33,7 @@ export default function App() {
                 <Route path="/ride/:rideId" element={<RideDetails />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/profile" element={<Profile />} />
+                <Route path="/profile/:userId" element={<Profile />} />
                 <Route path="/booking/:rideId" element={<Booking />} />
                 <Route path="/my-bookings" element={<MyBookings />} />
                 <Route path="*" element={<NotFound />} />
