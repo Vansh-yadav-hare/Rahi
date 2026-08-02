@@ -218,8 +218,9 @@ export function normalizeRide(apiRide) {
     seatsAvailable: apiRide.seatsAvailable,
     womenOnly: apiRide.womenOnly || false,
     instantBook: apiRide.instantBook || false,
+    status: apiRide.status || "active",
     driver: {
-      id: driver._id,
+      id: driver._id || driver.id || null,
       name: driver.name || "Verified Driver",
       initials: initials,
       trustScore: driver.trustScore || 85,

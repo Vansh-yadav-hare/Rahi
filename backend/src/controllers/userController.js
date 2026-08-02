@@ -67,14 +67,18 @@ export const updateMe = async (req, res) => {
   }
 }
 
-// Get public user profile by ID
+/**
+ * Gets another user's public profile data.
+ */
 export const getPublicProfile = async (req, res) => {
   const { id } = req.params
+
   try {
     const user = await User.findById(id)
     if (!user) {
-      return res.status(404).json({ message: 'User not found' })
+      return res.status(404).json({ message: 'User not found.' })
     }
+
     return res.status(200).json({
       id: user._id,
       name: user.name,
@@ -86,7 +90,9 @@ export const getPublicProfile = async (req, res) => {
     })
   } catch (error) {
     console.error(`Get Public Profile Error: ${error.message}`)
-    return res.status(500).json({ message: 'Failed to retrieve public profile' })
+    if (error.kind === 'ObjectId') {
+      return res.status(400).json({ message: 'Invalid user ID format.' })
+    }
+    return res.status(500).json({ message: 'Failed to retrieve public profile data.' })
   }
 }
-

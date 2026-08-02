@@ -25,6 +25,10 @@ export default function MyBookings() {
   const [cancelSuccessMsg, setCancelSuccessMsg] = useState("");
   const [activeReviewBookingId, setActiveReviewBookingId] = useState(null);
 
+  const [isReviewOpen, setIsReviewOpen] = useState(false);
+  const [selectedRideId, setSelectedRideId] = useState(null);
+  const [reviewedRideIds, setReviewedRideIds] = useState(new Set());
+
   const fetchBookings = async () => {
     setError("");
     try {
@@ -306,11 +310,47 @@ export default function MyBookings() {
                     </div>
                   </div>
                 )}
+
+                {b.status === "confirmed" && b.ride?.status === "completed" && (
+                  <div className="flex shrink-0 items-center justify-end">
+                    {reviewedRideIds.has(b.rideId._id) ? (
+                      <span className="inline-flex items-center gap-1.5 rounded-full border border-border/40 bg-secondary/35 px-2.5 py-1 text-xs font-semibold text-muted-foreground">
+                        Reviewed
+                      </span>
+                    ) : (
+                      <Button
+                        size="sm"
+                        variant="hero"
+                        className="h-8 text-xs px-3.5"
+                        onClick={() => {
+                          setSelectedRideId(b.rideId._id);
+                          setIsReviewOpen(true);
+                        }}
+                      >
+                        Write Review
+                      </Button>
+                    )}
+                  </div>
+                )}
               </div>
             ))}
           </div>
         )}
       </div>
+
+      <ReviewForm
+        rideId={selectedRideId}
+        isOpen={isReviewOpen}
+        onClose={() => {
+          setIsReviewOpen(false);
+          setSelectedRideId(null);
+        }}
+        onSuccess={() => {
+          if (selectedRideId) {
+            setReviewedRideIds((prev) => new Set([...prev, selectedRideId]));
+          }
+        }}
+      />
     </div>
   );
 }

@@ -1,5 +1,5 @@
 import express from 'express'
-import { createRide, searchRides, getRideById } from '../controllers/rideController.js'
+import { createRide, searchRides, getRideById, completeRide } from '../controllers/rideController.js'
 import authGuard from '../middleware/authGuard.js'
 
 const router = express.Router()
@@ -9,6 +9,9 @@ router.get('/search', searchRides)
 
 // Create endpoint (protected)
 router.post('/', authGuard, createRide)
+
+// Complete endpoint (protected)
+router.put('/:id/complete', authGuard, completeRide)
 
 // Detail retrieval endpoint
 router.get('/:id', getRideById)

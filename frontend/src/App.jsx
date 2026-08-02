@@ -12,6 +12,7 @@ import Safety from "@/pages/Safety";
 import RideDetails from "@/pages/RideDetails";
 import Login from "@/pages/Login";
 import Profile from "@/pages/Profile";
+import PublicProfile from "@/pages/PublicProfile";
 import Booking from "@/pages/Booking";
 import MyBookings from "@/features/bookings/MyBookings";
 
@@ -33,7 +34,7 @@ export default function App() {
                 <Route path="/ride/:rideId" element={<RideDetails />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/profile" element={<Profile />} />
-                <Route path="/profile/:userId" element={<Profile />} />
+                <Route path="/profile/:userId" element={<PublicProfile />} />
                 <Route path="/booking/:rideId" element={<Booking />} />
                 <Route path="/my-bookings" element={<MyBookings />} />
                 <Route path="*" element={<NotFound />} />

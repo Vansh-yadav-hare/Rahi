@@ -4,10 +4,10 @@ import authGuard from '../middleware/authGuard.js'
 
 const router = express.Router()
 
-// Submit review endpoint (protected)
+// Create a review (protected)
 router.post('/', authGuard, createReview)
 
-// Get all reviews for a user (protected)
+// Retrieve reviews for a user (protected - so only logged in users see reviews)
 router.get('/user/:userId', authGuard, getUserReviews)
 
 export default router

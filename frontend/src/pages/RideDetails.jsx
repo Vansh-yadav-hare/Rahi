@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
+import { useAuth } from "@/features/auth/AuthContext";
 import {
   ArrowRight,
   BadgeCheck,
@@ -16,19 +17,35 @@ import { Button } from "@/components/ui/button";
 import { TrustScore } from "@/components/TrustScore";
 import { normalizeRide } from "@/lib/rides";
 import apiClient from "@/services/apiClient";
-import { useAuth } from "@/features/auth/AuthContext";
 import ReviewForm from "@/features/reviews/ReviewForm";
 
 export default function RideDetails() {
   const { rideId } = useParams();
-  const navigate = useNavigate();
   const { user } = useAuth();
+  const navigate = useNavigate();
 
   const [ride, setRide] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [hasBooking, setHasBooking] = useState(false);
   const [isCompleted, setIsCompleted] = useState(false);
+  const [completing, setCompleting] = useState(false);
+  const [isReviewOpen, setIsReviewOpen] = useState(false);
+  const [hasReviewed, setHasReviewed] = useState(false);
+
+  const handleCompleteRide = async () => {
+    setCompleting(true);
+    try {
+      await apiClient.put(`/rides/${rideId}/complete`);
+      setRide((prev) => ({ ...prev, status: "completed" }));
+      setIsCompleted(true);
+    } catch (err) {
+      console.error("Complete ride error:", err);
+      alert(err.response?.data?.message || "Failed to mark ride as completed.");
+    } finally {
+      setCompleting(false);
+    }
+  };
 
   useEffect(() => {
     const fetchRideDetails = async () => {
@@ -39,7 +56,9 @@ export default function RideDetails() {
         const normalized = normalizeRide(response.data);
         setRide(normalized);
 
-        const completed = response.data.status === "completed" || new Date(response.data.dateTime) <= new Date();
+        const completed =
+          response.data.status === "completed" ||
+          new Date(response.data.dateTime) <= new Date();
         setIsCompleted(completed);
 
         // Check if user has a confirmed booking for this ride
@@ -53,13 +72,23 @@ export default function RideDetails() {
             if (matched) {
               setHasBooking(true);
             }
+
+            // Also check if they already submitted a review
+            const reviewsRes = await apiClient.get(`/reviews/user/${normalized.driver.id}`);
+            const reviewed = reviewsRes.data.some(
+              (r) => r.rideId?._id === rideId && r.fromUserId?._id === user?.id
+            );
+            setHasReviewed(reviewed);
           } catch (bErr) {
-            console.error("Failed to load user bookings in RideDetails:", bErr);
+            console.error("Failed to load user bookings/reviews in RideDetails:", bErr);
           }
         }
       } catch (err) {
         console.error("Get ride details error:", err);
-        setError(err.response?.data?.message || "Failed to retrieve ride details from the server.");
+        setError(
+          err.response?.data?.message ||
+            "Failed to retrieve ride details from the server."
+        );
       } finally {
         setLoading(false);
       }
@@ -68,7 +97,7 @@ export default function RideDetails() {
     if (rideId) {
       fetchRideDetails();
     }
-  }, [rideId]);
+  }, [rideId, user]);
 
   const handleBookRide = () => {
     navigate(`/booking/${ride.id}`);
@@ -110,6 +139,11 @@ export default function RideDetails() {
     const parts = fullAddress.split(", ");
     return parts.length > 0 ? parts[0] : fullAddress;
   };
+
+  const isDriver =
+    user &&
+    ride &&
+    (user.id === ride.driver.id || user._id === ride.driver.id);
 
   return (
     <div className="mx-auto max-w-6xl px-5 py-10 md:py-14">
@@ -181,8 +215,14 @@ export default function RideDetails() {
                 to={`/profile/${ride.driver.id}`}
                 className="flex size-14 items-center justify-center rounded-full bg-accent font-display text-lg font-bold text-accent-foreground border border-border/60 overflow-hidden hover:opacity-80 transition-opacity"
               >
-                {ride.driver.profilePhoto && (ride.driver.profilePhoto.startsWith("data:") || ride.driver.profilePhoto.startsWith("http")) ? (
-                  <img src={ride.driver.profilePhoto} alt="Avatar" className="size-full object-cover" />
+                {ride.driver.profilePhoto &&
+                (ride.driver.profilePhoto.startsWith("data:") ||
+                  ride.driver.profilePhoto.startsWith("http")) ? (
+                  <img
+                    src={ride.driver.profilePhoto}
+                    alt="Avatar"
+                    className="size-full object-cover"
+                  />
                 ) : ride.driver.profilePhoto && ride.driver.profilePhoto.length <= 4 ? (
                   <span className="text-2xl">{ride.driver.profilePhoto}</span>
                 ) : (
@@ -236,11 +276,26 @@ export default function RideDetails() {
           {/* Review section for completed rides */}
           {isCompleted && hasBooking && (
             <div className="mt-6">
+              {hasReviewed ? (
+                <div className="rounded-3xl border border-dashed border-border/40 bg-card/25 p-6 text-center text-muted-foreground text-sm font-semibold">
+                  You have already reviewed this trip. Thank you!
+                </div>
+              ) : (
+                <Button
+                  variant="hero"
+                  size="lg"
+                  className="w-full"
+                  onClick={() => setIsReviewOpen(true)}
+                >
+                  Leave a Review
+                </Button>
+              )}
               <ReviewForm
                 rideId={rideId}
-                toUserId={ride.driver.id}
+                isOpen={isReviewOpen}
+                onClose={() => setIsReviewOpen(false)}
                 onSuccess={() => {
-                  console.log("Review submitted successfully");
+                  setHasReviewed(true);
                 }}
               />
             </div>
@@ -277,15 +332,48 @@ export default function RideDetails() {
               </div>
             </div>
 
-            <Button
-              variant="hero"
-              size="xl"
-              className="mt-7 w-full"
-              onClick={handleBookRide}
-              disabled={isCompleted}
-            >
-              {isCompleted ? "Ride completed" : ride.instantBook ? "Book instantly" : "Request to book"}
-            </Button>
+            {isDriver ? (
+              ride.status === "active" ? (
+                <Button
+                  variant="hero"
+                  size="xl"
+                  className="mt-7 w-full"
+                  onClick={handleCompleteRide}
+                  disabled={completing}
+                >
+                  {completing ? (
+                    <>
+                      <Loader2 className="mr-1.5 size-4 animate-spin" /> Completing...
+                    </>
+                  ) : (
+                    "Complete Ride"
+                  )}
+                </Button>
+              ) : (
+                <Button
+                  variant="outline"
+                  size="xl"
+                  className="mt-7 w-full border-border/60"
+                  disabled
+                >
+                  Completed
+                </Button>
+              )
+            ) : (
+              <Button
+                variant="hero"
+                size="xl"
+                className="mt-7 w-full"
+                onClick={handleBookRide}
+                disabled={isCompleted}
+              >
+                {isCompleted
+                  ? "Ride completed"
+                  : ride.instantBook
+                    ? "Book instantly"
+                    : "Request to book"}
+              </Button>
+            )}
 
             <p className="mt-3 text-center text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
               Free cancellation up to 12h before departure.

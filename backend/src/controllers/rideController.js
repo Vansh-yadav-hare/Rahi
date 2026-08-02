@@ -168,3 +168,45 @@ export const getRideById = async (req, res) => {
     return res.status(500).json({ message: 'Failed to retrieve ride details.' })
   }
 }
+
+/**
+ * Marks a ride as completed (Protected - Driver of the ride only).
+ */
+export const completeRide = async (req, res) => {
+  const { id } = req.params
+  const driverId = req.user._id
+
+  try {
+    const ride = await Ride.findById(id)
+    if (!ride) {
+      return res.status(404).json({ message: 'Ride not found.' })
+    }
+
+    if (ride.driverId.toString() !== driverId.toString()) {
+      return res.status(403).json({ message: 'You are not authorized to complete this ride.' })
+    }
+
+    if (ride.status === 'completed') {
+      return res.status(400).json({ message: 'Ride is already completed.' })
+    }
+
+    if (ride.status === 'cancelled') {
+      return res.status(400).json({ message: 'Cannot complete a cancelled ride.' })
+    }
+
+    ride.status = 'completed'
+    await ride.save()
+
+    console.log(`[RIDE] Ride ${ride._id} marked as completed by driver ${driverId}`)
+    return res.status(200).json({
+      message: 'Ride completed successfully.',
+      ride,
+    })
+  } catch (error) {
+    console.error(`Complete Ride Error: ${error.message}`)
+    if (error.kind === 'ObjectId') {
+      return res.status(400).json({ message: 'Invalid Ride ID format.' })
+    }
+    return res.status(500).json({ message: 'Failed to complete ride.' })
+  }
+}
