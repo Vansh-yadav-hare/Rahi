@@ -46,6 +46,18 @@ export function SiteHeader() {
                 My Bookings
               </Link>
               <Link
+                to="/wallet"
+                className="rounded-lg px-3 py-2 text-sm font-semibold text-foreground/80 transition-smooth hover:bg-secondary/60 hover:text-foreground"
+              >
+                Wallet
+              </Link>
+              <Link
+                to="/admin"
+                className="rounded-lg px-3 py-2 text-sm font-semibold text-foreground/80 transition-smooth hover:bg-secondary/60 hover:text-foreground"
+              >
+                Admin
+              </Link>
+              <Link
                 to="/profile"
                 className="flex size-9 items-center justify-center rounded-full bg-accent font-display text-sm font-bold border border-border/60 transition-smooth hover:border-primary/40"
               >
@@ -105,6 +117,20 @@ export function SiteHeader() {
                   className="rounded-lg px-2 py-2 text-sm font-semibold text-foreground/80 hover:text-foreground"
                 >
                   My Bookings
+                </Link>
+                <Link
+                  to="/wallet"
+                  onClick={() => setOpen(false)}
+                  className="rounded-lg px-2 py-2 text-sm font-semibold text-foreground/80 hover:text-foreground"
+                >
+                  Wallet
+                </Link>
+                <Link
+                  to="/admin"
+                  onClick={() => setOpen(false)}
+                  className="rounded-lg px-2 py-2 text-sm font-semibold text-foreground/80 hover:text-foreground"
+                >
+                  Admin Panel
                 </Link>
                 <Link
                   to="/profile"

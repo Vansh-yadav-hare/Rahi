@@ -12,6 +12,7 @@ import {
   Users,
   Loader2,
   AlertCircle,
+  ShieldCheck,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { TrustScore } from "@/components/TrustScore";
@@ -32,6 +33,7 @@ export default function RideDetails() {
   const [completing, setCompleting] = useState(false);
   const [isReviewOpen, setIsReviewOpen] = useState(false);
   const [hasReviewed, setHasReviewed] = useState(false);
+  const [isPayoutReleased, setIsPayoutReleased] = useState(false);
 
   const handleCompleteRide = async () => {
     setCompleting(true);
@@ -67,10 +69,11 @@ export default function RideDetails() {
           try {
             const bookingsRes = await apiClient.get("/bookings/me");
             const matched = bookingsRes.data.find(
-              (b) => b.rideId?._id === rideId && b.status === "confirmed"
+              (b) => b.rideId?._id === rideId && ["BOOKED", "COMPLETED"].includes(b.status)
             );
             if (matched) {
               setHasBooking(true);
+              setIsPayoutReleased(matched.status === "COMPLETED");
             }
 
             // Also check if they already submitted a review
@@ -276,28 +279,40 @@ export default function RideDetails() {
           {/* Review section for completed rides */}
           {isCompleted && hasBooking && (
             <div className="mt-6">
-              {hasReviewed ? (
-                <div className="rounded-3xl border border-dashed border-border/40 bg-card/25 p-6 text-center text-muted-foreground text-sm font-semibold">
-                  You have already reviewed this trip. Thank you!
-                </div>
+              {isPayoutReleased ? (
+                <>
+                  {hasReviewed ? (
+                    <div className="rounded-3xl border border-dashed border-border/40 bg-card/25 p-6 text-center text-muted-foreground text-sm font-semibold">
+                      You have already reviewed this trip. Thank you!
+                    </div>
+                  ) : (
+                    <Button
+                      variant="hero"
+                      size="lg"
+                      className="w-full"
+                      onClick={() => setIsReviewOpen(true)}
+                    >
+                      Leave a Review
+                    </Button>
+                  )}
+                  <ReviewForm
+                    rideId={rideId}
+                    isOpen={isReviewOpen}
+                    onClose={() => setIsReviewOpen(false)}
+                    onSuccess={() => {
+                      setHasReviewed(true);
+                    }}
+                  />
+                </>
               ) : (
-                <Button
-                  variant="hero"
-                  size="lg"
-                  className="w-full"
-                  onClick={() => setIsReviewOpen(true)}
-                >
-                  Leave a Review
-                </Button>
+                <div className="rounded-2xl border border-dashed border-amber-500/30 bg-amber-500/5 p-5 text-center text-xs text-amber-500 font-semibold leading-relaxed">
+                  The ride has finished. Please go to your{" "}
+                  <Link to="/my-bookings" className="underline font-bold hover:text-amber-600">
+                    My Bookings
+                  </Link>{" "}
+                  dashboard to confirm ride completion and release escrow payment to write a review.
+                </div>
               )}
-              <ReviewForm
-                rideId={rideId}
-                isOpen={isReviewOpen}
-                onClose={() => setIsReviewOpen(false)}
-                onSuccess={() => {
-                  setHasReviewed(true);
-                }}
-              />
             </div>
           )}
         </div>
@@ -376,7 +391,7 @@ export default function RideDetails() {
             )}
 
             <p className="mt-3 text-center text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
-              Free cancellation up to 12h before departure.
+              Payments are held securely in Escrow
             </p>
           </div>
 
@@ -385,6 +400,16 @@ export default function RideDetails() {
             <p className="mt-1.5 text-xs text-muted-foreground leading-relaxed">
               Share a live link with family, chat in-app, and trigger SOS at any point in the trip.
             </p>
+          </div>
+
+          <div className="mt-4 rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-5 flex items-start gap-2.5">
+            <ShieldCheck className="size-5 shrink-0 text-emerald-500 mt-0.5" />
+            <div>
+              <p className="text-sm font-semibold text-emerald-500">Secure Escrow Protection</p>
+              <p className="mt-1.5 text-[11px] text-muted-foreground leading-relaxed">
+                Your payment is held safely in escrow and is released to the driver only after you confirm completion or after 24h.
+              </p>
+            </div>
           </div>
         </aside>
       </div>

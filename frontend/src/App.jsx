@@ -15,6 +15,8 @@ import Profile from "@/pages/Profile";
 import PublicProfile from "@/pages/PublicProfile";
 import Booking from "@/pages/Booking";
 import MyBookings from "@/features/bookings/MyBookings";
+import Wallet from "@/pages/Wallet";
+import AdminPanel from "@/pages/AdminPanel";
 
 const queryClient = new QueryClient();
 
@@ -37,6 +39,8 @@ export default function App() {
                 <Route path="/profile/:userId" element={<PublicProfile />} />
                 <Route path="/booking/:rideId" element={<Booking />} />
                 <Route path="/my-bookings" element={<MyBookings />} />
+                <Route path="/wallet" element={<Wallet />} />
+                <Route path="/admin" element={<AdminPanel />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </main>

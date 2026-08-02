@@ -19,8 +19,31 @@ const bookingSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ['pending', 'confirmed', 'cancelled'],
-      default: 'pending',
+      enum: [
+        'REQUESTED',
+        'BOOKED',
+        'ONGOING',
+        'COMPLETED',
+        'CANCELLED',
+        'DRIVER_CANCELLED',
+        'PASSENGER_NO_SHOW',
+        'DRIVER_NO_SHOW',
+        'DISPUTED',
+      ],
+      default: 'REQUESTED',
+    },
+    paymentStatus: {
+      type: String,
+      enum: [
+        'PENDING',
+        'PAID_IN_ESCROW',
+        'REFUND_INITIATED',
+        'REFUNDED',
+        'PARTIALLY_REFUNDED',
+        'RELEASED_TO_DRIVER',
+        'FAILED',
+      ],
+      default: 'PENDING',
     },
     paymentId: {
       type: String,

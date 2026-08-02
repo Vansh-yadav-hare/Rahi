@@ -1,5 +1,5 @@
 import express from 'express'
-import { createBooking, cancelBooking, getMyBookings } from '../controllers/bookingController.js'
+import { createBooking, cancelBooking, getMyBookings, confirmBookingCompletion, disputeBooking } from '../controllers/bookingController.js'
 import authGuard from '../middleware/authGuard.js'
 
 const router = express.Router()
@@ -13,5 +13,11 @@ router.post('/', authGuard, createBooking)
 
 // Cancel booking endpoint
 router.put('/:id/cancel', authGuard, cancelBooking)
+
+// Confirm ride completion (releases escrow funds)
+router.put('/:id/confirm-completion', authGuard, confirmBookingCompletion)
+
+// Raise dispute on a booking (escrow holds funds)
+router.put('/:id/dispute', authGuard, disputeBooking)
 
 export default router

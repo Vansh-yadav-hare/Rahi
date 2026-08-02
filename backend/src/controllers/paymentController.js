@@ -2,7 +2,11 @@ import crypto from 'crypto'
 import { Buffer } from 'buffer'
 import Booking from '../models/Booking.js'
 import Payment from '../models/Payment.js'
+import Transaction from '../models/Transaction.js'
 import { sendPush } from '../services/notificationService.js'
+
+// Helper to generate unique transaction IDs
+const generateTxnId = () => 'TXN-' + crypto.randomBytes(6).toString('hex').toUpperCase()
 
 /**
  * Creates a Razorpay payment order for a booking.
@@ -37,11 +41,13 @@ export const createPaymentOrder = async (req, res) => {
       return res.status(404).json({ message: 'Booking not found.' })
     }
 
-    // Calculate total price: seatsBooked * ride.price
+    // Calculate total price: (seatsBooked * ride.price) + 29 platform fee
     const pricePerSeat = booking.rideId.price
     const seats = booking.seatsBooked
-    const totalAmount = seats * pricePerSeat
-    const amountInPaise = Math.round(totalAmount * 100) // Razorpay expects amount in paise (1 INR = 100 paise)
+    const subtotal = seats * pricePerSeat
+    const bookingFee = 29 // fixed insurance/platform fee matching frontend
+    const totalAmount = subtotal + bookingFee
+    const amountInPaise = Math.round(totalAmount * 100) // Razorpay expects amount in paise
 
     // Call Razorpay API using direct fetch
     const authString = Buffer.from(`${keyId}:${keySecret}`).toString('base64')
@@ -73,7 +79,7 @@ export const createPaymentOrder = async (req, res) => {
       bookingId,
       amount: totalAmount,
       razorpayOrderId: orderData.id,
-      status: 'pending',
+      status: 'PENDING',
     })
 
     return res.status(201).json({
@@ -92,7 +98,7 @@ export const createPaymentOrder = async (req, res) => {
 
 /**
  * Verifies Razorpay payment signature server-side.
- * Confirms Booking and Payment documents only on a valid signature.
+ * Confirms Booking and Payment documents and moves status to PAID_IN_ESCROW.
  */
 export const verifyPaymentSignature = async (req, res) => {
   const { razorpay_order_id, razorpay_payment_id, razorpay_signature, bookingId } = req.body
@@ -129,39 +135,56 @@ export const verifyPaymentSignature = async (req, res) => {
       // Update Payment record to failed
       await Payment.findOneAndUpdate(
         { razorpayOrderId: razorpay_order_id },
-        { status: 'failed' }
+        { status: 'FAILED' }
       )
       return res.status(400).json({ message: 'Invalid payment signature. Verification failed.' })
     }
 
     console.log(`[PAYMENT] Payment signature verified successfully for order: ${razorpay_order_id}`)
 
-    // 1. Update Payment status to completed
+    // 1. Update Payment status to PAID_IN_ESCROW
     const payment = await Payment.findOneAndUpdate(
       { razorpayOrderId: razorpay_order_id },
-      { status: 'completed' },
-      { new: true }
-    )
-
-    // 2. Confirm the Booking
-    const booking = await Booking.findByIdAndUpdate(
-      bookingId,
       {
-        status: 'confirmed',
-        paymentId: razorpay_payment_id,
+        status: 'PAID_IN_ESCROW',
+        razorpayPaymentId: razorpay_payment_id,
+        razorpaySignature: razorpay_signature,
       },
       { new: true }
     )
+
+    // 2. Confirm the Booking (status -> BOOKED, paymentStatus -> PAID_IN_ESCROW)
+    const booking = await Booking.findByIdAndUpdate(
+      bookingId,
+      {
+        status: 'BOOKED',
+        paymentStatus: 'PAID_IN_ESCROW',
+        paymentId: razorpay_payment_id,
+      },
+      { new: true }
+    ).populate('rideId')
 
     if (!booking) {
       return res.status(404).json({ message: 'Booking not found.' })
     }
 
+    // 3. Create a transaction ledger record
+    await Transaction.create({
+      bookingId: booking._id,
+      userId: booking.passengerId,
+      amount: payment.amount,
+      type: 'PAYMENT',
+      status: 'SUCCESS',
+      transactionId: generateTxnId(),
+      description: `Payment secured in escrow for ride from ${booking.rideId.origin?.address.split(',')[0]} to ${booking.rideId.destination?.address.split(',')[0]}`,
+    })
+
     // Send push notification to passenger (non-blocking)
-    sendPush(booking.passengerId, 'Booking Confirmed', 'Your payment was successful and your booking is confirmed!')
+    sendPush(booking.passengerId, 'Booking Confirmed', 'Your payment was successful and your booking is confirmed in Escrow!')
+    sendPush(booking.rideId.driverId, 'New Payment Secured', `Payment of ₹${payment.amount} has been secured in escrow for your upcoming ride.`)
 
     return res.status(200).json({
-      message: 'Payment verified and booking confirmed successfully.',
+      message: 'Payment verified and booking confirmed in Escrow.',
       booking,
       payment,
     })
