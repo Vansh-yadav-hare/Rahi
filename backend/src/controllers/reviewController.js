@@ -42,7 +42,7 @@ export const createReview = async (req, res) => {
     const booking = await Booking.findOne({
       rideId,
       passengerId: fromUserId,
-      status: 'confirmed',
+      status: { $in: ['BOOKED', 'COMPLETED'] },
     })
 
     if (!booking) {

@@ -46,6 +46,23 @@ const rideSchema = new mongoose.Schema(
       type: [String],
       default: [],
     },
+    stops: [
+      {
+        address: { type: String, required: true },
+        location: {
+          type: { type: String, enum: ['Point'], default: 'Point' },
+          coordinates: { type: [Number], required: true }, // [longitude, latitude]
+        },
+      },
+    ],
+    womenOnly: {
+      type: Boolean,
+      default: false,
+    },
+    instantBook: {
+      type: Boolean,
+      default: false,
+    },
     dateTime: {
       type: Date,
       required: true,

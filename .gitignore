@@ -55,3 +55,6 @@ rideshare-*.json
 Thumbs.db
 Desktop.ini
 .DS_Store
+
+# Nested duplicate repository
+Rahi/

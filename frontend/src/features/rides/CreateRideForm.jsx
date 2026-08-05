@@ -8,9 +8,116 @@ import {
   Loader2,
   CheckCircle2,
   AlertCircle,
+  Plus,
+  Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import apiClient from "@/services/apiClient";
+
+// Reusable intermediate stop input component with Nominatim autocomplete
+function StopInput({ value, onChange, placeholder }) {
+  const [suggestions, setSuggestions] = useState([]);
+  const [showList, setShowList] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const selectedRef = useRef(false);
+  const containerRef = useRef(null);
+
+  useEffect(() => {
+    if (selectedRef.current) {
+      selectedRef.current = false;
+      return;
+    }
+    if (!value || value.trim().length < 3) {
+      setSuggestions([]);
+      return;
+    }
+    setLoading(true);
+    const timer = setTimeout(async () => {
+      try {
+        const response = await fetch(
+          `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(value)}&format=json&limit=5&addressdetails=1&countrycodes=in`,
+        );
+        if (response.ok) {
+          const data = await response.json();
+          const uniqueResults = data.map((item) => {
+            const parts = item.display_name.split(", ");
+            const shortName = parts.slice(0, 3).join(", ");
+            return {
+              fullName: item.display_name,
+              shortName: shortName,
+            };
+          });
+          setSuggestions(uniqueResults);
+        }
+      } catch (err) {
+        console.error("Stop autocomplete fetch error:", err);
+      } finally {
+        setLoading(false);
+      }
+    }, 450);
+
+    return () => clearTimeout(timer);
+  }, [value]);
+
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (containerRef.current && !containerRef.current.contains(event.target)) {
+        setShowList(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const fieldStyle =
+    "flex flex-1 items-center gap-2.5 rounded-xl border border-border/40 bg-background/25 px-3.5 py-3 transition-smooth hover:bg-background/45 hover:border-primary/30 focus-within:bg-background/55 focus-within:border-primary/50 focus-within:ring-2 focus-within:ring-ring/15 focus-within:ring-offset-2 focus-within:ring-offset-background";
+
+  return (
+    <div ref={containerRef} className="relative w-full">
+      <label className={fieldStyle}>
+        {loading ? (
+          <Loader2 className="size-4 shrink-0 animate-spin text-primary" />
+        ) : (
+          <MapPin className="size-4 shrink-0 text-muted-foreground" />
+        )}
+        <input
+          value={value}
+          onChange={(e) => {
+            onChange(e.target.value);
+            setShowList(true);
+          }}
+          onFocus={() => setShowList(true)}
+          placeholder={placeholder}
+          className="w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+        />
+      </label>
+
+      {showList && suggestions.length > 0 && (
+        <ul className="absolute top-full left-0 z-50 mt-2 w-full max-h-40 overflow-y-auto rounded-2xl border border-border/40 bg-card/95 p-1.5 shadow-lift backdrop-blur-md">
+          {suggestions.map((s, idx) => (
+            <li key={idx}>
+              <button
+                type="button"
+                onClick={() => {
+                  selectedRef.current = true;
+                  onChange(s.fullName);
+                  setSuggestions([]);
+                  setShowList(false);
+                }}
+                className="w-full rounded-xl px-3 py-2 text-left text-xs font-semibold text-foreground/80 hover:bg-secondary/70 hover:text-primary transition-smooth"
+              >
+                {s.shortName}
+                <span className="block mt-0.5 text-[9px] font-medium text-muted-foreground truncate">
+                  {s.fullName}
+                </span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
 
 export default function CreateRideForm() {
   const [origin, setOrigin] = useState("");
@@ -19,7 +126,12 @@ export default function CreateRideForm() {
   const [seatsAvailable, setSeatsAvailable] = useState("3");
   const [price, setPrice] = useState("350");
 
-  // Autocomplete suggestions states
+  // Intermediate stops and filters states
+  const [stops, setStops] = useState([]);
+  const [womenOnly, setWomenOnly] = useState(false);
+  const [instantBook, setInstantBook] = useState(false);
+
+  // Autocomplete suggestions states for start/end
   const [originSuggestions, setOriginSuggestions] = useState([]);
   const [destSuggestions, setDestSuggestions] = useState([]);
   const [showOriginList, setShowOriginList] = useState(false);
@@ -165,7 +277,10 @@ export default function CreateRideForm() {
         dateTime,
         seatsAvailable: parseInt(seatsAvailable, 10),
         price: parseFloat(price),
-        route: [], // can add intermediates later
+        stops: stops.filter(s => s && s.trim()), // save geocoded stops
+        womenOnly,
+        instantBook,
+        route: [],
       });
 
       const newRide = response.data.ride;
@@ -202,6 +317,9 @@ export default function CreateRideForm() {
               setOrigin("");
               setDestination("");
               setDateTime("");
+              setStops([]);
+              setWomenOnly(false);
+              setInstantBook(false);
               setSuccessRideId(null);
             }}
           >
@@ -217,7 +335,7 @@ export default function CreateRideForm() {
 
   return (
     <form
-      className="space-y-4 rounded-3xl border border-border/40 bg-card/45 backdrop-blur-md p-7 shadow-lift max-w-lg mx-auto"
+      className="space-y-5 rounded-3xl border border-border/40 bg-card/45 backdrop-blur-md p-7 shadow-lift max-w-lg mx-auto"
       onSubmit={handleSubmit}
     >
       <h2 className="font-display text-xl font-bold text-foreground">Ride Details</h2>
@@ -251,16 +369,16 @@ export default function CreateRideForm() {
         </label>
 
         {showOriginList && originSuggestions.length > 0 && (
-          <ul className="absolute top-full left-0 z-50 mt-2 w-full max-h-60 overflow-y-auto rounded-2xl border border-border/40 bg-card/95 p-1.5 shadow-lift backdrop-blur-md animate-in fade-in slide-in-from-top-2 duration-200">
+          <ul className="absolute top-full left-0 z-50 mt-2 w-full max-h-48 overflow-y-auto rounded-2xl border border-border/40 bg-card/95 p-1.5 shadow-lift backdrop-blur-md animate-in fade-in slide-in-from-top-2 duration-200">
             {originSuggestions.map((s, idx) => (
               <li key={idx}>
                 <button
                   type="button"
                   onClick={() => handleSelectOrigin(s)}
-                  className="w-full rounded-xl px-3 py-2.5 text-left text-xs font-semibold text-foreground/80 hover:bg-secondary/70 hover:text-primary transition-smooth"
+                  className="w-full rounded-xl px-3 py-2 text-left text-xs font-semibold text-foreground/80 hover:bg-secondary/70 hover:text-primary transition-smooth"
                 >
                   {s.shortName}
-                  <span className="block mt-0.5 text-[10px] font-medium text-muted-foreground truncate">
+                  <span className="block mt-0.5 text-[9px] font-medium text-muted-foreground truncate">
                     {s.fullName}
                   </span>
                 </button>
@@ -270,8 +388,45 @@ export default function CreateRideForm() {
         )}
       </div>
 
+      {/* Intermediate Stops Editor */}
+      <div className="space-y-3.5 border-t border-border/20 pt-4">
+        <div className="flex items-center justify-between">
+          <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block">
+            Intermediate Stops
+          </span>
+          <button
+            type="button"
+            onClick={() => setStops([...stops, ""])}
+            className="flex items-center gap-1 text-xs font-bold text-primary hover:underline hover:scale-105 transition-transform"
+          >
+            <Plus className="size-3.5" /> Add Stop
+          </button>
+        </div>
+        
+        {stops.map((stop, index) => (
+          <div key={index} className="flex items-center gap-2">
+            <StopInput
+              value={stop}
+              onChange={(val) => {
+                const updated = [...stops];
+                updated[index] = val;
+                setStops(updated);
+              }}
+              placeholder={`Intermediate Stop #${index + 1}`}
+            />
+            <button
+              type="button"
+              onClick={() => setStops(stops.filter((_, idx) => idx !== index))}
+              className="flex size-11 items-center justify-center rounded-xl bg-destructive/10 text-destructive border border-destructive/20 hover:bg-destructive/20 hover:scale-105 active:scale-95 transition-smooth"
+            >
+              <Trash2 className="size-4" />
+            </button>
+          </div>
+        ))}
+      </div>
+
       {/* Destination Input */}
-      <div ref={destContainerRef} className="relative">
+      <div ref={destContainerRef} className="relative border-t border-border/20 pt-4">
         <label className={fieldStyle}>
           {loadingDest ? (
             <Loader2 className="size-4 shrink-0 animate-spin text-primary" />
@@ -292,16 +447,16 @@ export default function CreateRideForm() {
         </label>
 
         {showDestList && destSuggestions.length > 0 && (
-          <ul className="absolute top-full left-0 z-50 mt-2 w-full max-h-60 overflow-y-auto rounded-2xl border border-border/40 bg-card/95 p-1.5 shadow-lift backdrop-blur-md animate-in fade-in slide-in-from-top-2 duration-200">
+          <ul className="absolute top-full left-0 z-50 mt-2 w-full max-h-48 overflow-y-auto rounded-2xl border border-border/40 bg-card/95 p-1.5 shadow-lift backdrop-blur-md animate-in fade-in slide-in-from-top-2 duration-200">
             {destSuggestions.map((s, idx) => (
               <li key={idx}>
                 <button
                   type="button"
                   onClick={() => handleSelectDest(s)}
-                  className="w-full rounded-xl px-3 py-2.5 text-left text-xs font-semibold text-foreground/80 hover:bg-secondary/70 hover:text-primary transition-smooth"
+                  className="w-full rounded-xl px-3 py-2 text-left text-xs font-semibold text-foreground/80 hover:bg-secondary/70 hover:text-primary transition-smooth"
                 >
                   {s.shortName}
-                  <span className="block mt-0.5 text-[10px] font-medium text-muted-foreground truncate">
+                  <span className="block mt-0.5 text-[9px] font-medium text-muted-foreground truncate">
                     {s.fullName}
                   </span>
                 </button>
@@ -352,6 +507,28 @@ export default function CreateRideForm() {
           className="w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground"
         />
       </label>
+
+      {/* Filter Checkboxes */}
+      <div className="flex flex-wrap gap-4 pt-2">
+        <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-muted-foreground hover:text-foreground transition-smooth">
+          <input
+            type="checkbox"
+            checked={womenOnly}
+            onChange={(e) => setWomenOnly(e.target.checked)}
+            className="rounded border-border/40 text-primary focus:ring-primary/20 accent-primary"
+          />
+          Women-only ride
+        </label>
+        <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-muted-foreground hover:text-foreground transition-smooth">
+          <input
+            type="checkbox"
+            checked={instantBook}
+            onChange={(e) => setInstantBook(e.target.checked)}
+            className="rounded border-border/40 text-primary focus:ring-primary/20 accent-primary"
+          />
+          Instant booking
+        </label>
+      </div>
 
       <Button variant="hero" size="xl" className="w-full" disabled={loading}>
         {loading ? (

@@ -16,6 +16,7 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [googleClientMissing, setGoogleClientMissing] = useState(false);
 
   useEffect(() => {
     /* global google */
@@ -23,6 +24,7 @@ export default function Login() {
       const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
       if (!clientId) {
         console.error("VITE_GOOGLE_CLIENT_ID is not configured in .env.local");
+        setGoogleClientMissing(true);
         return;
       }
 
@@ -199,10 +201,17 @@ export default function Login() {
 
         {/* Google Authentication */}
         <div className="mt-6 flex justify-center">
-          <div
-            id="google-signin-btn"
-            className="w-full max-w-[380px] overflow-hidden flex justify-center"
-          ></div>
+          {googleClientMissing ? (
+            <div className="w-full text-center p-4 border border-dashed border-amber-500/30 rounded-2xl bg-amber-500/5 text-amber-200 text-xs">
+              <span className="font-semibold block mb-1.5 text-amber-400">Google Login Not Configured</span>
+              Add <code className="bg-background/80 px-1.5 py-0.5 rounded text-foreground font-mono text-[10px]">VITE_GOOGLE_CLIENT_ID</code> to your <code className="bg-background/80 px-1.5 py-0.5 rounded text-foreground font-mono text-[10px]">frontend/.env</code> to show the Google button.
+            </div>
+          ) : (
+            <div
+              id="google-signin-btn"
+              className="w-full max-w-[380px] overflow-hidden flex justify-center"
+            ></div>
+          )}
         </div>
       </div>
     </div>

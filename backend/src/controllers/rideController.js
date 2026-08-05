@@ -1,11 +1,12 @@
 import Ride from '../models/Ride.js'
+import Booking from '../models/Booking.js'
 import { geocodeAddress } from '../services/geocodingService.js'
 
 /**
  * Creates a new ride (Protected - Driver role only).
  */
 export const createRide = async (req, res) => {
-  const { origin, destination, route, dateTime, seatsAvailable, price } = req.body
+  const { origin, destination, route, stops, womenOnly, instantBook, dateTime, seatsAvailable, price } = req.body
 
   // 1. Role verification check
   const userRole = req.user.role
@@ -59,6 +60,30 @@ export const createRide = async (req, res) => {
         })
     }
 
+    // Geocode intermediate stops sequentially
+    const geocodedStops = []
+    if (Array.isArray(stops) && stops.length > 0) {
+      for (const stopAddress of stops) {
+        if (stopAddress && stopAddress.trim()) {
+          console.log(`[RIDE] Geocoding intermediate stop: "${stopAddress}"`)
+          const geocodedStop = await geocodeAddress(stopAddress)
+          if (geocodedStop) {
+            geocodedStops.push({
+              address: geocodedStop.displayName,
+              location: {
+                type: 'Point',
+                coordinates: [geocodedStop.lon, geocodedStop.lat],
+              },
+            })
+          } else {
+            return res.status(400).json({
+              message: `Intermediate stop "${stopAddress}" could not be verified. Please enter a valid address.`,
+            })
+          }
+        }
+      }
+    }
+
     // 4. Create and save the new Ride
     const newRide = await Ride.create({
       driverId: req.user._id,
@@ -76,6 +101,9 @@ export const createRide = async (req, res) => {
           coordinates: [geocodedDest.lon, geocodedDest.lat],
         },
       },
+      stops: geocodedStops,
+      womenOnly: womenOnly === true || womenOnly === 'true',
+      instantBook: instantBook === true || instantBook === 'true',
       route: Array.isArray(route) ? route : [],
       dateTime: new Date(dateTime),
       seatsAvailable: parsedSeats,
@@ -84,7 +112,7 @@ export const createRide = async (req, res) => {
     })
 
     console.log(
-      `[RIDE] Ride successfully created from "${newRide.origin}" to "${newRide.destination}"`
+      `[RIDE] Ride successfully created from "${newRide.origin.address}" to "${newRide.destination.address}"`
     )
     return res.status(201).json({
       message: 'Ride created successfully',
@@ -98,6 +126,7 @@ export const createRide = async (req, res) => {
 
 /**
  * Searches for active rides based on origin, destination, and date.
+ * Supports segment matching and prorated pricing.
  */
 export const searchRides = async (req, res) => {
   const originQuery = req.query.origin || req.query.from
@@ -106,16 +135,6 @@ export const searchRides = async (req, res) => {
 
   try {
     const filter = { status: 'active' }
-
-    // Match origin location (case-insensitive substring of address)
-    if (originQuery && originQuery.trim()) {
-      filter['origin.address'] = { $regex: originQuery.trim(), $options: 'i' }
-    }
-
-    // Match destination location (case-insensitive substring of address)
-    if (destQuery && destQuery.trim()) {
-      filter['destination.address'] = { $regex: destQuery.trim(), $options: 'i' }
-    }
 
     // Match exact date (start of day to end of day)
     if (dateQuery) {
@@ -136,7 +155,70 @@ export const searchRides = async (req, res) => {
       .populate('driverId', 'name phone profilePhoto trustScore isVerified')
       .sort({ dateTime: 1 })
 
-    return res.status(200).json(rides)
+    const matchedRides = []
+
+    for (const ride of rides) {
+      // Construct complete sequence of stops
+      const stopsList = [
+        ride.origin.address,
+        ...ride.stops.map(s => s.address),
+        ride.destination.address
+      ]
+
+      let startIdx = 0
+      let endIdx = stopsList.length - 1
+
+      if (originQuery && originQuery.trim()) {
+        const cleanOrigin = originQuery.trim().toLowerCase()
+        startIdx = stopsList.findIndex(addr => addr.toLowerCase().includes(cleanOrigin))
+      }
+
+      if (destQuery && destQuery.trim()) {
+        const cleanDest = destQuery.trim().toLowerCase()
+        endIdx = stopsList.findIndex(addr => addr.toLowerCase().includes(cleanDest))
+      }
+
+      // Check if both matched and are in correct order
+      if (startIdx !== -1 && endIdx !== -1 && startIdx < endIdx) {
+        const legsCount = stopsList.length - 1
+        
+        // Calculate segment price
+        const segmentPrice = Math.round(((endIdx - startIdx) / legsCount) * ride.price)
+
+        // Calculate segment seat capacity checking active bookings
+        const bookings = await Booking.find({
+          rideId: ride._id,
+          status: { $in: ['BOOKED', 'REQUESTED'] }
+        })
+
+        const occupied = Array(legsCount).fill(0)
+        for (const b of bookings) {
+          const bStart = stopsList.findIndex(addr => addr.toLowerCase().includes((b.pickup || ride.origin.address).toLowerCase()))
+          const bEnd = stopsList.findIndex(addr => addr.toLowerCase().includes((b.dropoff || ride.destination.address).toLowerCase()))
+          if (bStart !== -1 && bEnd !== -1 && bStart < bEnd) {
+            for (let k = bStart; k < bEnd; k++) {
+              occupied[k] += b.seatsBooked
+            }
+          }
+        }
+
+        let maxOccupiedOnSegment = 0
+        for (let k = startIdx; k < endIdx; k++) {
+          maxOccupiedOnSegment = Math.max(maxOccupiedOnSegment, occupied[k])
+        }
+
+        const seatsAvailableOnSegment = Math.max(0, ride.seatsAvailable - maxOccupiedOnSegment)
+
+        // Return a customized object for this search segment
+        const rideJson = ride.toJSON()
+        rideJson.price = segmentPrice
+        rideJson.seatsAvailable = seatsAvailableOnSegment
+        
+        matchedRides.push(rideJson)
+      }
+    }
+
+    return res.status(200).json(matchedRides)
   } catch (error) {
     console.error(`Search Rides Error: ${error.message}`)
     return res.status(500).json({ message: 'Failed to search rides.' })
@@ -159,7 +241,37 @@ export const getRideById = async (req, res) => {
       return res.status(404).json({ message: 'Ride not found.' })
     }
 
-    return res.status(200).json(ride)
+    // Determine current minimum seats available across any segment of the ride
+    const stopsList = [
+      ride.origin.address,
+      ...ride.stops.map(s => s.address),
+      ride.destination.address
+    ]
+    const legsCount = stopsList.length - 1
+
+    const bookings = await Booking.find({
+      rideId: ride._id,
+      status: { $in: ['BOOKED', 'REQUESTED'] }
+    })
+
+    const occupied = Array(legsCount).fill(0)
+    for (const b of bookings) {
+      const bStart = stopsList.findIndex(addr => addr.toLowerCase().includes((b.pickup || ride.origin.address).toLowerCase()))
+      const bEnd = stopsList.findIndex(addr => addr.toLowerCase().includes((b.dropoff || ride.destination.address).toLowerCase()))
+      if (bStart !== -1 && bEnd !== -1 && bStart < bEnd) {
+        for (let k = bStart; k < bEnd; k++) {
+          occupied[k] += b.seatsBooked
+        }
+      }
+    }
+
+    const maxOccupiedAnywhere = Math.max(0, ...occupied)
+    const minSeatsAvailable = Math.max(0, ride.seatsAvailable - maxOccupiedAnywhere)
+
+    const rideJson = ride.toJSON()
+    rideJson.seatsAvailable = minSeatsAvailable
+
+    return res.status(200).json(rideJson)
   } catch (error) {
     console.error(`Get Ride By ID Error: ${error.message}`)
     if (error.kind === 'ObjectId') {

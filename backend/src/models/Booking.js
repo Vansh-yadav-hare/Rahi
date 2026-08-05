@@ -49,6 +49,14 @@ const bookingSchema = new mongoose.Schema(
       type: String,
       required: false,
     },
+    pickup: {
+      type: String,
+      required: false,
+    },
+    dropoff: {
+      type: String,
+      required: false,
+    },
     cancellationInfo: {
       reason: String,
       cancelledAt: Date,

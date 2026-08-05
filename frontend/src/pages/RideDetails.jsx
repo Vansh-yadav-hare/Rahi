@@ -34,6 +34,9 @@ export default function RideDetails() {
   const [isReviewOpen, setIsReviewOpen] = useState(false);
   const [hasReviewed, setHasReviewed] = useState(false);
   const [isPayoutReleased, setIsPayoutReleased] = useState(false);
+  const [pickup, setPickup] = useState("");
+  const [dropoff, setDropoff] = useState("");
+  const [proratedPrice, setProratedPrice] = useState(0);
 
   const handleCompleteRide = async () => {
     setCompleting(true);
@@ -103,8 +106,36 @@ export default function RideDetails() {
   }, [rideId, user]);
 
   const handleBookRide = () => {
-    navigate(`/booking/${ride.id}`);
+    const params = new URLSearchParams();
+    if (pickup) params.set("pickup", pickup);
+    if (dropoff) params.set("dropoff", dropoff);
+    navigate(`/booking/${ride.id}?${params.toString()}`);
   };
+
+  useEffect(() => {
+    if (ride) {
+      setPickup(ride.fullFrom || ride.from);
+      setDropoff(ride.fullTo || ride.to);
+      setProratedPrice(ride.price);
+    }
+  }, [ride]);
+
+  useEffect(() => {
+    if (ride && pickup && dropoff) {
+      const stopsList = [
+        ride.fullFrom || ride.from,
+        ...(ride.rawStops || []).map((s) => s.address),
+        ride.fullTo || ride.to,
+      ];
+      const startIdx = stopsList.indexOf(pickup);
+      const endIdx = stopsList.indexOf(dropoff);
+      if (startIdx !== -1 && endIdx !== -1 && startIdx < endIdx) {
+        const legsCount = stopsList.length - 1;
+        const computed = Math.round(((endIdx - startIdx) / legsCount) * ride.price);
+        setProratedPrice(computed);
+      }
+    }
+  }, [pickup, dropoff, ride]);
 
   if (loading) {
     return (
@@ -322,7 +353,7 @@ export default function RideDetails() {
           <div className="rounded-3xl border border-border/40 bg-card/45 backdrop-blur-md p-7 shadow-lift">
             <div className="flex items-end justify-between">
               <div>
-                <div className="font-display text-3xl font-bold text-foreground">₹{ride.price}</div>
+                <div className="font-display text-3xl font-bold text-foreground">₹{proratedPrice || ride.price}</div>
                 <div className="text-xs text-muted-foreground mt-0.5">per seat, all inclusive</div>
               </div>
               <span className="inline-flex items-center gap-1 rounded-full bg-secondary/80 px-2.5 py-1 text-xs font-semibold text-secondary-foreground">
@@ -330,7 +361,69 @@ export default function RideDetails() {
               </span>
             </div>
 
-            <div className="mt-6 space-y-3.5 text-sm">
+            {/* Pickup / Dropoff selectors if stops exist */}
+            {ride.rawStops && ride.rawStops.length > 0 && (
+              <div className="mt-5 border-t border-border/20 pt-4 space-y-3">
+                <div>
+                  <label className="text-[10px] font-bold text-primary uppercase tracking-wide block mb-1.5">
+                    Select Pickup Location
+                  </label>
+                  <select
+                    value={pickup}
+                    onChange={(e) => {
+                      setPickup(e.target.value);
+                      const stopsList = [
+                        ride.fullFrom || ride.from,
+                        ...(ride.rawStops || []).map((s) => s.address),
+                        ride.fullTo || ride.to,
+                      ];
+                      const startIdx = stopsList.indexOf(e.target.value);
+                      const endIdx = stopsList.indexOf(dropoff);
+                      if (endIdx <= startIdx && startIdx < stopsList.length - 1) {
+                        setDropoff(stopsList[startIdx + 1]);
+                      }
+                    }}
+                    className="w-full rounded-xl border border-border/40 bg-background/25 px-3 py-2.5 text-xs text-foreground outline-none cursor-pointer focus:border-primary/50"
+                  >
+                    {[ride.fullFrom || ride.from, ...(ride.rawStops || []).map((s) => s.address)].map((addr, idx) => (
+                      <option key={idx} value={addr} className="bg-card text-foreground">
+                        {getShortAddress(addr)}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-[10px] font-bold text-primary uppercase tracking-wide block mb-1.5">
+                    Select Dropoff Location
+                  </label>
+                  <select
+                    value={dropoff}
+                    onChange={(e) => setDropoff(e.target.value)}
+                    className="w-full rounded-xl border border-border/40 bg-background/25 px-3 py-2.5 text-xs text-foreground outline-none cursor-pointer focus:border-primary/50"
+                  >
+                    {[...(ride.rawStops || []).map((s) => s.address), ride.fullTo || ride.to].map((addr, idx) => {
+                      const stopsList = [
+                        ride.fullFrom || ride.from,
+                        ...(ride.rawStops || []).map((s) => s.address),
+                        ride.fullTo || ride.to,
+                      ];
+                      const startIdx = stopsList.indexOf(pickup);
+                      const currentIdx = stopsList.indexOf(addr);
+                      if (currentIdx <= startIdx) return null;
+
+                      return (
+                        <option key={idx} value={addr} className="bg-card text-foreground">
+                          {getShortAddress(addr)}
+                        </option>
+                      );
+                    })}
+                  </select>
+                </div>
+              </div>
+            )}
+
+            <div className="mt-6 space-y-3.5 text-sm border-t border-border/20 pt-4">
               <div className="flex items-center justify-between">
                 <span className="text-muted-foreground font-medium">Seats</span>
                 <span className="font-semibold text-foreground">1 passenger</span>
@@ -338,7 +431,13 @@ export default function RideDetails() {
               <div className="flex items-center justify-between">
                 <span className="text-muted-foreground font-medium">Pickup</span>
                 <span className="flex items-center gap-1 font-semibold text-foreground">
-                  <MapPin className="size-3.5 text-primary" /> {getShortAddress(ride.from)}
+                  <MapPin className="size-3.5 text-primary" /> {getShortAddress(pickup || ride.from)}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-muted-foreground font-medium">Dropoff</span>
+                <span className="flex items-center gap-1 font-semibold text-foreground">
+                  <MapPin className="size-3.5 text-primary" /> {getShortAddress(dropoff || ride.to)}
                 </span>
               </div>
               <div className="flex items-center justify-between">

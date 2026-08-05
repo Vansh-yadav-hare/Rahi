@@ -1,26 +1,22 @@
 import React, { useState, useEffect } from "react";
-import { useParams, useNavigate, Link } from "react-router-dom";
-import { useAuth } from "../features/auth/AuthContext";
-import { Navigate } from "react-router-dom";
+import { useParams, useNavigate, Navigate, Link, useSearchParams } from "react-router-dom";
 import {
-  Loader2,
+  ArrowRight,
   AlertCircle,
   CheckCircle2,
-  ShieldCheck,
   IndianRupee,
-  ArrowRight,
+  Loader2,
+  ShieldCheck,
+  Wallet,
 } from "lucide-react";
-import { Button } from "../components/ui/button";
-import apiClient from "../services/apiClient";
-import { normalizeRide } from "../lib/rides";
+import { Button } from "@/components/ui/button";
+import { useAuth } from "@/features/auth/AuthContext";
+import apiClient from "@/services/apiClient";
+import { normalizeRide, getShortAddress } from "@/lib/rides";
 
-// Dynamically load Razorpay SDK script helper
+// Helper to inject script tag for Razorpay SDK modal
 const loadRazorpayScript = () => {
   return new Promise((resolve) => {
-    if (window.Razorpay) {
-      resolve(true);
-      return;
-    }
     const script = document.createElement("script");
     script.src = "https://checkout.razorpay.com/v1/checkout.js";
     script.onload = () => resolve(true);
@@ -33,6 +29,11 @@ export default function Booking() {
   const { rideId } = useParams();
   const navigate = useNavigate();
   const { user, isAuthenticated } = useAuth();
+  const [searchParams] = useSearchParams();
+
+  // Route Segment Pickup / Dropoff parameters
+  const pickupParam = searchParams.get("pickup") || "";
+  const dropoffParam = searchParams.get("dropoff") || "";
 
   const [ride, setRide] = useState(null);
   const [loadingRide, setLoadingRide] = useState(true);
@@ -40,9 +41,14 @@ export default function Booking() {
 
   const [seatsBooked, setSeatsBooked] = useState(1);
   const [processing, setProcessing] = useState(false);
+  const [payingWithWallet, setPayingWithWallet] = useState(false);
   const [paymentSuccess, setPaymentSuccess] = useState(false);
   const [transactionId, setTransactionId] = useState("");
 
+  const [walletBalance, setWalletBalance] = useState(0);
+  const [loadingWallet, setLoadingWallet] = useState(false);
+
+  // Fetch ride details
   useEffect(() => {
     const fetchRide = async () => {
       setLoadingRide(true);
@@ -63,6 +69,24 @@ export default function Booking() {
       fetchRide();
     }
   }, [rideId]);
+
+  // Fetch current user wallet balance
+  useEffect(() => {
+    const fetchWallet = async () => {
+      if (!isAuthenticated) return;
+      setLoadingWallet(true);
+      try {
+        const response = await apiClient.get("/wallet");
+        setWalletBalance(response.data.walletBalance || 0);
+      } catch (err) {
+        console.error("Fetch wallet balance error:", err);
+      } finally {
+        setLoadingWallet(false);
+      }
+    };
+
+    fetchWallet();
+  }, [isAuthenticated]);
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
@@ -99,8 +123,22 @@ export default function Booking() {
     );
   }
 
-  // Cost summaries calculations
-  const pricePerSeat = ride.price;
+  // Prorated segment pricing logic
+  const stopsList = [
+    ride.fullFrom || ride.from,
+    ...(ride.rawStops || []).map((s) => s.address),
+    ride.fullTo || ride.to,
+  ];
+
+  const startIdx = stopsList.indexOf(pickupParam || ride.fullFrom || ride.from);
+  const endIdx = stopsList.indexOf(dropoffParam || ride.fullTo || ride.to);
+
+  let pricePerSeat = ride.price;
+  if (startIdx !== -1 && endIdx !== -1 && startIdx < endIdx) {
+    const legsCount = stopsList.length - 1;
+    pricePerSeat = Math.round(((endIdx - startIdx) / legsCount) * ride.price);
+  }
+
   const subtotal = seatsBooked * pricePerSeat;
   const bookingFee = 29; // fixed insurance/platform fee
   const totalAmount = subtotal + bookingFee;
@@ -122,6 +160,8 @@ export default function Booking() {
       const bookingResponse = await apiClient.post("/bookings", {
         rideId: ride.id,
         seatsBooked,
+        pickup: pickupParam || ride.fullFrom || ride.from,
+        dropoff: dropoffParam || ride.fullTo || ride.to,
       });
       const booking = bookingResponse.data.booking;
 
@@ -131,13 +171,34 @@ export default function Booking() {
       });
       const order = orderResponse.data;
 
-      // 4. Configure Razorpay checkout options
+      // Local sandbox check: bypass checkout modal if it's a simulated order
+      if (order.orderId && order.orderId.startsWith("order_mock_")) {
+        console.log("[PAYMENT] Mock order detected. Bypassing Razorpay Modal checkout.");
+        try {
+          const verifyResponse = await apiClient.post("/payments/verify", {
+            razorpay_order_id: order.orderId,
+            razorpay_payment_id: "pay_mock_" + Math.random().toString(36).substring(2, 10).toUpperCase(),
+            razorpay_signature: "mock_signature",
+            bookingId: booking._id,
+          });
+          setTransactionId(verifyResponse.data.payment.razorpayPaymentId);
+          setPaymentSuccess(true);
+        } catch (verifyErr) {
+          console.error("Mock verify signature error:", verifyErr);
+          setError("Failed to verify simulated payment order.");
+        } finally {
+          setProcessing(false);
+        }
+        return;
+      }
+
+      // 4. Configure Razorpay checkout options for real orders
       const options = {
         key: import.meta.env.VITE_RAZORPAY_KEY_ID || order.keyId,
         amount: order.amount,
         currency: order.currency,
         name: "Rahi Ride Share",
-        description: `Seat Booking for ${ride.from} to ${ride.to}`,
+        description: `Seat Booking for ${getShortAddress(pickupParam || ride.from)} to ${getShortAddress(dropoffParam || ride.to)}`,
         order_id: order.orderId,
         handler: async function (response) {
           try {
@@ -191,6 +252,38 @@ export default function Booking() {
     }
   };
 
+  const handlePayWithWallet = async () => {
+    setError("");
+    setProcessing(true);
+    setPayingWithWallet(true);
+
+    try {
+      // 1. Create the booking request
+      const bookingResponse = await apiClient.post("/bookings", {
+        rideId: ride.id,
+        seatsBooked,
+        pickup: pickupParam || ride.fullFrom || ride.from,
+        dropoff: dropoffParam || ride.fullTo || ride.to,
+      });
+      const booking = bookingResponse.data.booking;
+
+      // 2. Process pay with wallet endpoint
+      const payResponse = await apiClient.put(`/bookings/${booking._id}/pay-wallet`);
+
+      setTransactionId(payResponse.data.booking.paymentId);
+      setPaymentSuccess(true);
+    } catch (err) {
+      console.error("Rahi Wallet Payment Error:", err);
+      setError(
+        err.response?.data?.message ||
+          "Failed to process transaction via wallet. Check your balance and try again.",
+      );
+    } finally {
+      setProcessing(false);
+      setPayingWithWallet(false);
+    }
+  };
+
   // Success Receipt View
   if (paymentSuccess) {
     return (
@@ -217,6 +310,18 @@ export default function Booking() {
               <span>Seats Booked:</span>
               <span className="font-semibold text-foreground">
                 {seatsBooked} {seatsBooked === 1 ? "Seat" : "Seats"}
+              </span>
+            </div>
+            <div className="flex justify-between">
+              <span>From:</span>
+              <span className="font-semibold text-foreground truncate max-w-[200px]">
+                {getShortAddress(pickupParam || ride.from)}
+              </span>
+            </div>
+            <div className="flex justify-between">
+              <span>To:</span>
+              <span className="font-semibold text-foreground truncate max-w-[200px]">
+                {getShortAddress(dropoffParam || ride.to)}
               </span>
             </div>
             <div className="flex justify-between">
@@ -271,9 +376,9 @@ export default function Booking() {
               <div className="text-xs font-semibold text-primary">{ride.date}</div>
               <div className="text-muted-foreground text-xs">·</div>
               <div className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
-                <span>{ride.from}</span>
+                <span>{getShortAddress(pickupParam || ride.from)}</span>
                 <ArrowRight className="size-3.5 text-primary" />
-                <span>{ride.to}</span>
+                <span>{getShortAddress(dropoffParam || ride.to)}</span>
               </div>
             </div>
 
@@ -281,24 +386,30 @@ export default function Booking() {
             <div className="mt-8 space-y-3.5">
               <label className="text-sm font-bold text-foreground block">Select Seats</label>
               <div className="flex flex-wrap gap-2.5">
-                {seatOptions.map((opt) => (
-                  <button
-                    key={opt}
-                    type="button"
-                    onClick={() => setSeatsBooked(opt)}
-                    className={`flex size-12 items-center justify-center rounded-xl border text-sm font-bold transition-smooth hover:scale-[1.03] active:scale-[0.97] ${
-                      seatsBooked === opt
-                        ? "border-primary bg-primary/10 text-primary shadow-soft"
-                        : "border-border/40 bg-background/25 hover:bg-background/40"
-                    }`}
-                  >
-                    {opt}
-                  </button>
-                ))}
+                {seatOptions.length > 0 ? (
+                  seatOptions.map((opt) => (
+                    <button
+                      key={opt}
+                      type="button"
+                      onClick={() => setSeatsBooked(opt)}
+                      className={`flex size-12 items-center justify-center rounded-xl border text-sm font-bold transition-smooth hover:scale-[1.03] active:scale-[0.97] ${
+                        seatsBooked === opt
+                          ? "border-primary bg-primary/10 text-primary shadow-soft"
+                          : "border-border/40 bg-background/25 hover:bg-background/40"
+                      }`}
+                    >
+                      {opt}
+                    </button>
+                  ))
+                ) : (
+                  <div className="text-sm font-semibold text-destructive py-2">
+                    No seats available on this segment.
+                  </div>
+                )}
               </div>
               <p className="text-[11px] font-medium text-muted-foreground">
                 You can book up to {ride.seatsAvailable} remaining{" "}
-                {ride.seatsAvailable === 1 ? "seat" : "seats"} for this trip.
+                {ride.seatsAvailable === 1 ? "seat" : "seats"} for this segment.
               </p>
             </div>
           </div>
@@ -315,7 +426,7 @@ export default function Booking() {
           </div>
         </div>
 
-        {/* Right Side: Cost Summary */}
+        {/* Right Side: Cost Summary & Payment Buttons */}
         <aside className="h-fit">
           <div className="rounded-3xl border border-border/40 bg-card/45 backdrop-blur-md p-7 shadow-lift space-y-6">
             <h3 className="font-display text-lg font-bold text-foreground">Price Summary</h3>
@@ -340,7 +451,7 @@ export default function Booking() {
               </div>
             </div>
 
-            <div className="flex items-center justify-between text-base">
+            <div className="flex items-center justify-between text-base border-b border-border/30 pb-5">
               <span className="font-bold text-foreground">Total Amount</span>
               <span className="flex items-center font-display text-2xl font-bold text-primary">
                 <IndianRupee className="size-4 mr-0.5 mt-1" strokeWidth={2.5} />
@@ -348,24 +459,61 @@ export default function Booking() {
               </span>
             </div>
 
-            <Button
-              variant="hero"
-              size="xl"
-              className="w-full"
-              onClick={handlePayAndConfirm}
-              disabled={processing}
-            >
-              {processing ? (
-                <>
-                  <Loader2 className="mr-2 size-4 animate-spin" /> Processing Payment...
-                </>
-              ) : (
-                "Pay & Confirm"
-              )}
-            </Button>
+            <div className="space-y-3">
+              {/* Pay via Razorpay Online */}
+              <Button
+                variant="hero"
+                size="xl"
+                className="w-full"
+                onClick={handlePayAndConfirm}
+                disabled={processing || seatOptions.length === 0}
+              >
+                {processing && !payingWithWallet ? (
+                  <>
+                    <Loader2 className="mr-2 size-4 animate-spin" /> Processing Payment...
+                  </>
+                ) : (
+                  "Pay with Cards/UPI"
+                )}
+              </Button>
 
-            <p className="text-[10px] text-center font-semibold text-muted-foreground uppercase tracking-wider">
-              Payments processed securely via Razorpay.
+              {/* Pay via Wallet balance option */}
+              <div className="rounded-2xl border border-border/30 bg-background/10 p-4 space-y-3">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-muted-foreground font-medium flex items-center gap-1.5">
+                    <Wallet className="size-3.5 text-primary" /> Rahi Wallet Balance
+                  </span>
+                  <span className="font-bold text-foreground">
+                    {loadingWallet ? (
+                      <Loader2 className="size-3 animate-spin inline" />
+                    ) : (
+                      `₹${walletBalance.toFixed(2)}`
+                    )}
+                  </span>
+                </div>
+
+                <Button
+                  variant="outline"
+                  size="lg"
+                  className="w-full border-border/60 hover:bg-primary/5 hover:text-primary hover:border-primary/50 text-xs font-bold"
+                  onClick={handlePayWithWallet}
+                  disabled={processing || seatOptions.length === 0 || walletBalance < totalAmount}
+                >
+                  {payingWithWallet ? (
+                    <>
+                      <Loader2 className="mr-1.5 size-3.5 animate-spin" /> Transferring...
+                    </>
+                  ) : walletBalance < totalAmount ? (
+                    "Insufficient Wallet Balance"
+                  ) : (
+                    "Pay via Rahi Wallet"
+                  )}
+                </Button>
+              </div>
+            </div>
+
+            <p className="text-[9px] text-center font-bold text-muted-foreground uppercase tracking-wider">
+              Payments are held securely in Escrow
             </p>
           </div>
         </aside>

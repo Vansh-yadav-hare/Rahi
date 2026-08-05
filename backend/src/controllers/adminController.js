@@ -1,12 +1,11 @@
-import crypto from 'crypto'
 import Booking from '../models/Booking.js'
 import Ride from '../models/Ride.js'
 import User from '../models/User.js'
 import Payment from '../models/Payment.js'
 import Transaction from '../models/Transaction.js'
 import { sendPush } from '../services/notificationService.js'
-
-const generateTxnId = () => 'TXN-' + crypto.randomBytes(6).toString('hex').toUpperCase()
+import { generateTxnId } from '../utils/txn.js'
+import { getBookingSegmentPrice } from './bookingController.js'
 
 // Helper to trigger a Razorpay refund
 const processRazorpayRefund = async (paymentId, amountInRupees) => {
@@ -91,7 +90,8 @@ export const resolveDispute = async (req, res) => {
     }
 
     const ride = booking.rideId
-    const bookingAmount = booking.seatsBooked * ride.price
+    const segmentPrice = getBookingSegmentPrice(booking)
+    const bookingAmount = booking.seatsBooked * segmentPrice
 
     if (action === 'release') {
       // release escrow to driver
@@ -199,7 +199,8 @@ export const markNoShow = async (req, res) => {
     }
 
     const ride = booking.rideId
-    const bookingAmount = booking.seatsBooked * ride.price
+    const segmentPrice = getBookingSegmentPrice(booking)
+    const bookingAmount = booking.seatsBooked * segmentPrice
 
     if (type === 'passenger') {
       // Passenger no-show -> No refund. Driver receives full payment (minus 10% commission).

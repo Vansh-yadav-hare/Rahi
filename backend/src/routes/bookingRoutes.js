@@ -1,5 +1,5 @@
 import express from 'express'
-import { createBooking, cancelBooking, getMyBookings, confirmBookingCompletion, disputeBooking } from '../controllers/bookingController.js'
+import { createBooking, cancelBooking, getMyBookings, confirmBookingCompletion, disputeBooking, payWithWallet } from '../controllers/bookingController.js'
 import authGuard from '../middleware/authGuard.js'
 
 const router = express.Router()
@@ -19,5 +19,8 @@ router.put('/:id/confirm-completion', authGuard, confirmBookingCompletion)
 
 // Raise dispute on a booking (escrow holds funds)
 router.put('/:id/dispute', authGuard, disputeBooking)
+
+// Pay with wallet balance
+router.put('/:id/pay-wallet', authGuard, payWithWallet)
 
 export default router

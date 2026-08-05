@@ -162,6 +162,12 @@ export function filterRides(from, to, womenOnly) {
   });
 }
 
+export const getShortAddress = (fullAddress) => {
+  if (!fullAddress) return "";
+  const parts = fullAddress.split(", ");
+  return parts.length > 0 ? parts[0] : fullAddress;
+};
+
 export function normalizeRide(apiRide) {
   if (!apiRide) return null;
   // If it's already in the frontend format (mock data), return as-is
@@ -183,12 +189,6 @@ export function normalizeRide(apiRide) {
     minute: "2-digit",
     hour12: false,
   });
-
-  const getShortAddress = (fullAddress) => {
-    if (!fullAddress) return "";
-    const parts = fullAddress.split(", ");
-    return parts.length > 0 ? parts[0] : fullAddress;
-  };
 
   const driver = apiRide.driverId || {};
   const initials = driver.name
@@ -231,7 +231,10 @@ export function normalizeRide(apiRide) {
       joined: "2026",
       profilePhoto: driver.profilePhoto,
     },
-    stops: apiRide.route || [],
+    stops: Array.isArray(apiRide.stops) && apiRide.stops.length > 0
+      ? apiRide.stops.map(s => getShortAddress(s.address))
+      : apiRide.route || [],
+    rawStops: apiRide.stops || [],
     perks: ["Live tracking", "AC"],
   };
 }
