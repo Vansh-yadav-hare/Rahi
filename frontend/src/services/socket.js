@@ -12,16 +12,22 @@ export const trackingSocket = io(`${API_URL}/tracking`, {
   autoConnect: false,
   reconnectionAttempts: 5,
   reconnectionDelay: 2000,
+  forceNew: true,
+  multiplex: false,
 });
 
 export const chatSocket = io(`${API_URL}/chat`, {
   autoConnect: false,
   reconnectionAttempts: 5,
   reconnectionDelay: 2000,
+  forceNew: true,
+  multiplex: false,
 });
 
 export const notificationSocket = io(API_URL, {
   autoConnect: false,
   reconnectionAttempts: 5,
   reconnectionDelay: 2000,
+  forceNew: true,
+  multiplex: false,
 });

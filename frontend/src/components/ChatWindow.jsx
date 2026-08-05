@@ -19,37 +19,43 @@ export default function ChatWindow({ rideId }) {
     if (!rideId) return;
 
     const handleConnect = () => {
+      console.log("[CHAT_SOCKET] Connect callback. Joining room: chat:" + rideId);
       setConnected(true);
       chatSocket.emit("join_chat", { rideId });
     };
 
-    // Connect to Chat Socket
+    console.log("[CHAT_SOCKET] Connect initiated for rideId:", rideId);
     chatSocket.connect();
 
     // If socket is already connected (e.g. from hot-reload, fast-navigation, or Double Mount)
     if (chatSocket.connected) {
+      console.log("[CHAT_SOCKET] Socket already connected. Joining room immediately.");
       handleConnect();
     }
 
     chatSocket.on("connect", handleConnect);
 
     chatSocket.on("disconnect", () => {
+      console.log("[CHAT_SOCKET] Socket disconnected");
       setConnected(false);
     });
 
     // Handle initial history payload
     chatSocket.on("message_history", (history) => {
+      console.log("[CHAT_SOCKET] Message history loaded, count:", history.length);
       setMessages(history);
       setTimeout(scrollToBottom, 100);
     });
 
     // Handle new incoming messages
     chatSocket.on("receive_message", (newMessage) => {
+      console.log("[CHAT_SOCKET] receive_message event fired, payload:", newMessage);
       setMessages((prev) => [...prev, newMessage]);
       setTimeout(scrollToBottom, 50);
     });
 
     return () => {
+      console.log("[CHAT_SOCKET] Cleaning up and disconnecting...");
       chatSocket.off("connect", handleConnect);
       chatSocket.off("disconnect");
       chatSocket.off("message_history");
