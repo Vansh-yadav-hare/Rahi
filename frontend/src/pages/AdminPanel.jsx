@@ -30,7 +30,7 @@ export default function AdminPanel() {
       console.error("Fetch admin bookings error:", err);
       setError("Failed to load bookings database. Make sure you are authorized.");
     } finally {
-      setBookings(prev => [...prev]);
+      setBookings((prev) => [...prev]);
       setLoading(false);
     }
   };
@@ -52,7 +52,7 @@ export default function AdminPanel() {
 
   const handleResolveDispute = async (bookingId, action) => {
     const isConfirmed = window.confirm(
-      `Are you sure you want to resolve this dispute by choosing: "${action.toUpperCase()}"? This action is final and will disburse escrow funds.`
+      `Are you sure you want to resolve this dispute by choosing: "${action.toUpperCase()}"? This action is final and will disburse escrow funds.`,
     );
     if (!isConfirmed) return;
 
@@ -76,7 +76,7 @@ export default function AdminPanel() {
 
   const handleMarkNoShow = async (bookingId, type) => {
     const isConfirmed = window.confirm(
-      `Are you sure you want to mark a "${type.toUpperCase()} NO-SHOW" for this booking? This will disburse/refund escrow funds according to policy.`
+      `Are you sure you want to mark a "${type.toUpperCase()} NO-SHOW" for this booking? This will disburse/refund escrow funds according to policy.`,
     );
     if (!isConfirmed) return;
 
@@ -203,7 +203,10 @@ export default function AdminPanel() {
                           {ride.destination?.address?.split(",")[0] || "Unknown"}
                         </div>
                         <div className="text-[10px] text-muted-foreground mt-0.5 font-medium">
-                          Date: {ride.dateTime ? new Date(ride.dateTime).toLocaleDateString("en-IN") : "N/A"}
+                          Date:{" "}
+                          {ride.dateTime
+                            ? new Date(ride.dateTime).toLocaleDateString("en-IN")
+                            : "N/A"}
                         </div>
                         <div className="text-[9px] text-muted-foreground font-semibold uppercase mt-1 tracking-wider">
                           ID: {b._id}
@@ -212,7 +215,9 @@ export default function AdminPanel() {
 
                       {/* Passenger */}
                       <td className="px-6 py-4">
-                        <div className="font-semibold text-foreground">{passenger.name || "N/A"}</div>
+                        <div className="font-semibold text-foreground">
+                          {passenger.name || "N/A"}
+                        </div>
                         <div className="text-[10px] text-muted-foreground font-medium mt-0.5">
                           {passenger.phone || passenger.email || "No contact"}
                         </div>
@@ -241,14 +246,14 @@ export default function AdminPanel() {
                       <td className="px-6 py-4 space-y-1.5">
                         <span
                           className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide ${getStatusColor(
-                            b.status
+                            b.status,
                           )}`}
                         >
                           {b.status}
                         </span>
                         <span
                           className={`block w-fit items-center rounded-full border px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide ${getPaymentStatusColor(
-                            b.paymentStatus
+                            b.paymentStatus,
                           )}`}
                         >
                           {b.paymentStatus}

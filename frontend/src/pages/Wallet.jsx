@@ -27,7 +27,7 @@ export default function Wallet() {
       console.error("Fetch wallet error:", err);
       setError("Failed to retrieve your wallet balance and transactions.");
     } finally {
-      setWallet(prev => ({ ...prev }));
+      setWallet((prev) => ({ ...prev }));
       setLoading(false);
     }
   };
@@ -210,7 +210,10 @@ export default function Wallet() {
         ) : (
           <div className="divide-y divide-border/20 space-y-4">
             {transactions.map((t, i) => (
-              <div key={t._id} className={`flex items-center justify-between gap-4 pt-4 ${i === 0 ? "pt-0" : ""}`}>
+              <div
+                key={t._id}
+                className={`flex items-center justify-between gap-4 pt-4 ${i === 0 ? "pt-0" : ""}`}
+              >
                 <div className="flex items-center gap-3.5 min-w-0">
                   {renderTransactionIcon(t.type)}
                   <div className="min-w-0">
@@ -224,7 +227,9 @@ export default function Wallet() {
                 </div>
 
                 <div className="text-right shrink-0">
-                  <span className={`text-sm ${getAmountColor(t.type)} flex items-center justify-end`}>
+                  <span
+                    className={`text-sm ${getAmountColor(t.type)} flex items-center justify-end`}
+                  >
                     {getAmountPrefix(t.type)}
                     <IndianRupee className="size-3.5 mr-0.5" />
                     {t.amount.toFixed(2)}

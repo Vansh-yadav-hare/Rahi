@@ -66,7 +66,7 @@ export default function MyBookings() {
 
       const { passengerRefundAmount } = response.data;
       setCancelSuccessMsg(
-        `Booking cancelled successfully. Passenger Refund: ₹${passengerRefundAmount}`
+        `Booking cancelled successfully. Passenger Refund: ₹${passengerRefundAmount}`,
       );
 
       await fetchBookings();
@@ -81,7 +81,7 @@ export default function MyBookings() {
 
   const handleConfirmCompletion = async (bookingId) => {
     const isConfirmed = window.confirm(
-      "Confirming ride completion will release payment from escrow to the driver. Do you want to proceed?"
+      "Confirming ride completion will release payment from escrow to the driver. Do you want to proceed?",
     );
     if (!isConfirmed) return;
 
@@ -89,7 +89,9 @@ export default function MyBookings() {
     setCancelSuccessMsg("");
     try {
       const response = await apiClient.put(`/bookings/${bookingId}/confirm-completion`);
-      setCancelSuccessMsg(response.data.message || "Ride completion confirmed! Funds released to driver.");
+      setCancelSuccessMsg(
+        response.data.message || "Ride completion confirmed! Funds released to driver.",
+      );
       await fetchBookings();
     } catch (err) {
       console.error("Confirm completion error:", err);
@@ -99,7 +101,7 @@ export default function MyBookings() {
 
   const handleDisputeBooking = async (bookingId) => {
     const isConfirmed = window.confirm(
-      "Are you sure you want to raise a dispute? This will freeze the funds in escrow, and an administrator will review the trip details."
+      "Are you sure you want to raise a dispute? This will freeze the funds in escrow, and an administrator will review the trip details.",
     );
     if (!isConfirmed) return;
 
@@ -107,7 +109,9 @@ export default function MyBookings() {
     setCancelSuccessMsg("");
     try {
       const response = await apiClient.put(`/bookings/${bookingId}/dispute`);
-      setCancelSuccessMsg(response.data.message || "Dispute raised successfully. Escrow funds are locked.");
+      setCancelSuccessMsg(
+        response.data.message || "Dispute raised successfully. Escrow funds are locked.",
+      );
       await fetchBookings();
     } catch (err) {
       console.error("Raise dispute error:", err);
@@ -131,11 +135,9 @@ export default function MyBookings() {
       ["BOOKED", "REQUESTED"].includes(b.status) &&
       b.ride &&
       b.ride.status === "active" &&
-      new Date(b.rideId.dateTime) > now
+      new Date(b.rideId.dateTime) > now,
   );
-  const pastBookings = bookings.filter(
-    (b) => !upcomingBookings.some((ub) => ub._id === b._id)
-  );
+  const pastBookings = bookings.filter((b) => !upcomingBookings.some((ub) => ub._id === b._id));
 
   const getShortAddress = (fullAddress) => {
     if (!fullAddress) return "";
@@ -290,7 +292,8 @@ export default function MyBookings() {
                             ? "bg-sky-500/10 border-sky-500/25 text-sky-500"
                             : b.paymentStatus === "RELEASED_TO_DRIVER"
                               ? "bg-primary/10 border-primary/25 text-primary"
-                              : b.paymentStatus === "REFUNDED" || b.paymentStatus === "PARTIALLY_REFUNDED"
+                              : b.paymentStatus === "REFUNDED" ||
+                                  b.paymentStatus === "PARTIALLY_REFUNDED"
                                 ? "bg-emerald-500/10 border-emerald-500/25 text-emerald-500"
                                 : "bg-secondary border-border/60 text-muted-foreground"
                         }`}

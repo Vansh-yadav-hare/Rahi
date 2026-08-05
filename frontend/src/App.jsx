@@ -1,9 +1,12 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { BrowserRouter, Routes, Route, Link } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { AuthProvider } from "@/features/auth/AuthContext";
+import { AuthProvider, useAuth } from "@/features/auth/AuthContext";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
+import { Toaster } from "@/components/ui/sonner";
+import { notificationSocket } from "@/services/socket";
+import { toast } from "sonner";
 
 import Home from "@/pages/Home";
 import Search from "@/pages/Search";
@@ -17,6 +20,7 @@ import Booking from "@/pages/Booking";
 import MyBookings from "@/features/bookings/MyBookings";
 import Wallet from "@/pages/Wallet";
 import AdminPanel from "@/pages/AdminPanel";
+import VerificationUpload from "@/pages/VerificationUpload";
 
 const queryClient = new QueryClient();
 
@@ -25,6 +29,7 @@ export default function App() {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <BrowserRouter>
+          <NotificationListener />
           <div className="flex min-h-screen flex-col">
             <SiteHeader />
             <main className="flex-1">
@@ -41,11 +46,13 @@ export default function App() {
                 <Route path="/my-bookings" element={<MyBookings />} />
                 <Route path="/wallet" element={<Wallet />} />
                 <Route path="/admin" element={<AdminPanel />} />
+                <Route path="/verification" element={<VerificationUpload />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </main>
             <SiteFooter />
           </div>
+          <Toaster />
         </BrowserRouter>
       </AuthProvider>
     </QueryClientProvider>
@@ -72,4 +79,27 @@ function NotFound() {
       </div>
     </div>
   );
+}
+
+function NotificationListener() {
+  const { user } = useAuth();
+
+  useEffect(() => {
+    if (user) {
+      const uId = user.id || user._id;
+      notificationSocket.connect();
+      notificationSocket.emit("join_user", { userId: uId });
+
+      notificationSocket.on("push_notification", ({ title, body }) => {
+        toast.info(title, { description: body });
+      });
+
+      return () => {
+        notificationSocket.off("push_notification");
+        notificationSocket.disconnect();
+      };
+    }
+  }, [user]);
+
+  return null;
 }

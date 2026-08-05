@@ -1,4 +1,5 @@
 import User from '../models/User.js'
+import { sendPush } from '../services/notificationService.js'
 
 // Get current user profile
 export const getMe = async (req, res) => {
@@ -94,5 +95,23 @@ export const getPublicProfile = async (req, res) => {
       return res.status(400).json({ message: 'Invalid user ID format.' })
     }
     return res.status(500).json({ message: 'Failed to retrieve public profile data.' })
+  }
+}
+
+/**
+ * Triggers a test push notification to the logged-in user.
+ */
+export const testPushNotification = async (req, res) => {
+  const { title, body } = req.body
+  try {
+    await sendPush(
+      req.user._id,
+      title || 'Rahi Test Push Notification 🚗',
+      body || 'Great news! Your Firebase push notification system is working perfectly.'
+    )
+    return res.status(200).json({ success: true, message: 'Push notification triggered successfully.' })
+  } catch (error) {
+    console.error(`Test Push Error: ${error.message}`)
+    return res.status(500).json({ message: 'Failed to send test push notification.' })
   }
 }

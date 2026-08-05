@@ -19,6 +19,28 @@ import { TrustScore } from "@/components/TrustScore";
 import { normalizeRide } from "@/lib/rides";
 import apiClient from "@/services/apiClient";
 import ReviewForm from "@/features/reviews/ReviewForm";
+import LiveTrackingMap from "../components/LiveTrackingMap";
+import ChatWindow from "../components/ChatWindow";
+import SOSButton from "../components/SOSButton";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { toast } from "sonner";
 
 export default function RideDetails() {
   const { rideId } = useParams();
@@ -34,6 +56,35 @@ export default function RideDetails() {
   const [isReviewOpen, setIsReviewOpen] = useState(false);
   const [hasReviewed, setHasReviewed] = useState(false);
   const [isPayoutReleased, setIsPayoutReleased] = useState(false);
+
+  const [isReportOpen, setIsReportOpen] = useState(false);
+  const [reportCategory, setReportCategory] = useState("");
+  const [reportDetails, setReportDetails] = useState("");
+  const [reporting, setReporting] = useState(false);
+
+  const handleReportSubmit = async (e) => {
+    e.preventDefault();
+    if (!reportCategory || !reportDetails.trim()) return;
+
+    setReporting(true);
+    try {
+      await apiClient.post("/reports", {
+        rideId,
+        category: reportCategory,
+        details: reportDetails.trim(),
+      });
+
+      toast.success("Thank you. Your concern has been reported. Our safety team will review it.");
+      setIsReportOpen(false);
+      setReportCategory("");
+      setReportDetails("");
+    } catch (err) {
+      console.error("Report filing error:", err);
+      toast.error(err.response?.data?.message || "Failed to submit report. Please try again.");
+    } finally {
+      setReporting(false);
+    }
+  };
 
   const handleCompleteRide = async () => {
     setCompleting(true);
@@ -59,8 +110,7 @@ export default function RideDetails() {
         setRide(normalized);
 
         const completed =
-          response.data.status === "completed" ||
-          new Date(response.data.dateTime) <= new Date();
+          response.data.status === "completed" || new Date(response.data.dateTime) <= new Date();
         setIsCompleted(completed);
 
         // Check if user has a confirmed booking for this ride
@@ -69,7 +119,9 @@ export default function RideDetails() {
           try {
             const bookingsRes = await apiClient.get("/bookings/me");
             const matched = bookingsRes.data.find(
-              (b) => b.rideId?._id === rideId && ["BOOKED", "COMPLETED"].includes(b.status)
+              (b) =>
+                (b.rideId?._id === rideId || b.rideId === rideId) &&
+                ["BOOKED", "COMPLETED"].includes(b.status),
             );
             if (matched) {
               setHasBooking(true);
@@ -79,7 +131,7 @@ export default function RideDetails() {
             // Also check if they already submitted a review
             const reviewsRes = await apiClient.get(`/reviews/user/${normalized.driver.id}`);
             const reviewed = reviewsRes.data.some(
-              (r) => r.rideId?._id === rideId && r.fromUserId?._id === user?.id
+              (r) => r.rideId?._id === rideId && r.fromUserId?._id === user?.id,
             );
             setHasReviewed(reviewed);
           } catch (bErr) {
@@ -88,10 +140,7 @@ export default function RideDetails() {
         }
       } catch (err) {
         console.error("Get ride details error:", err);
-        setError(
-          err.response?.data?.message ||
-            "Failed to retrieve ride details from the server."
-        );
+        setError(err.response?.data?.message || "Failed to retrieve ride details from the server.");
       } finally {
         setLoading(false);
       }
@@ -143,10 +192,16 @@ export default function RideDetails() {
     return parts.length > 0 ? parts[0] : fullAddress;
   };
 
-  const isDriver =
-    user &&
-    ride &&
-    (user.id === ride.driver.id || user._id === ride.driver.id);
+  const isDriver = user && ride && (user.id === ride.driver.id || user._id === ride.driver.id);
+
+  console.log("[DEBUG] RideDetails render state:", {
+    user: user ? { id: user.id, _id: user._id, role: user.role } : null,
+    driverId: ride?.driver?.id,
+    isDriver,
+    hasBooking,
+    rideStatus: ride?.status,
+    rideId,
+  });
 
   return (
     <div className="mx-auto max-w-6xl px-5 py-10 md:py-14">
@@ -263,18 +318,121 @@ export default function RideDetails() {
               <Car className="size-4 text-primary" /> {ride.driver.car}
             </p>
 
-            <div className="mt-6 flex flex-wrap gap-3 border-t border-border/30 pt-6">
-              <Button variant="outline" className="border-border/60">
-                <MessagesSquare className="size-4" /> Message driver
+            <div className="mt-6 flex w-full gap-3 border-t border-border/30 pt-6">
+              <Button variant="outline" className="flex-1 border-border/60 justify-center">
+                <MessagesSquare className="size-4 mr-1.5" /> Message driver
               </Button>
-              <Button
-                variant="ghost"
-                className="text-destructive hover:text-destructive hover:bg-destructive/10"
-              >
-                <Siren className="size-4" /> Report a concern
-              </Button>
+              <Dialog open={isReportOpen} onOpenChange={setIsReportOpen}>
+                <DialogTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    className="flex-1 text-destructive hover:text-destructive hover:bg-destructive/10 justify-center"
+                  >
+                    <Siren className="size-4 mr-1.5" /> Report a concern
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-[425px] rounded-3xl border border-border/80 bg-card p-6 shadow-lift backdrop-blur-xl">
+                  <DialogHeader>
+                    <DialogTitle className="font-display font-bold text-foreground flex items-center gap-2">
+                      <Siren className="size-5 text-destructive animate-pulse" />
+                      Report a Safety Concern
+                    </DialogTitle>
+                    <DialogDescription className="text-xs text-muted-foreground mt-1">
+                      If you feel unsafe or have a serious issue regarding this ride, please choose
+                      a category and provide details. Our support team will investigate immediately.
+                    </DialogDescription>
+                  </DialogHeader>
+
+                  <form onSubmit={handleReportSubmit} className="space-y-4 mt-2">
+                    <div className="space-y-2">
+                      <Label htmlFor="category" className="text-xs font-bold text-foreground">
+                        What is your concern about?
+                      </Label>
+                      <Select value={reportCategory} onValueChange={setReportCategory} required>
+                        <SelectTrigger className="w-full rounded-xl bg-background/50 border-border/60">
+                          <SelectValue placeholder="Select a category" />
+                        </SelectTrigger>
+                        <SelectContent className="rounded-xl border border-border/50 bg-card z-50">
+                          <SelectItem value="reckless_driving">
+                            Reckless Driving / Over-speeding
+                          </SelectItem>
+                          <SelectItem value="inappropriate_behavior">
+                            Inappropriate / Rude Behavior
+                          </SelectItem>
+                          <SelectItem value="vehicle_condition">
+                            Vehicle Maintenance / Condition
+                          </SelectItem>
+                          <SelectItem value="payment_fare">
+                            Fare Dispute / Extra Charges requested
+                          </SelectItem>
+                          <SelectItem value="other">Other issue</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="details" className="text-xs font-bold text-foreground">
+                        Provide specific details
+                      </Label>
+                      <Textarea
+                        id="details"
+                        placeholder="Please describe exactly what happened..."
+                        value={reportDetails}
+                        onChange={(e) => setReportDetails(e.target.value)}
+                        className="min-h-[100px] rounded-xl bg-background/50 border-border/60 text-xs resize-none"
+                        maxLength={1000}
+                        required
+                      />
+                    </div>
+
+                    <DialogFooter className="pt-2 flex gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => setIsReportOpen(false)}
+                        className="rounded-xl border-border/60 text-xs w-full sm:w-auto cursor-pointer"
+                        disabled={reporting}
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        type="submit"
+                        variant="destructive"
+                        className="rounded-xl text-xs w-full sm:w-auto gap-1.5 cursor-pointer"
+                        disabled={reporting || !reportCategory || !reportDetails.trim()}
+                      >
+                        {reporting ? (
+                          <>
+                            <Loader2 className="size-3.5 animate-spin" /> Submitting...
+                          </>
+                        ) : (
+                          "Submit Report"
+                        )}
+                      </Button>
+                    </DialogFooter>
+                  </form>
+                </DialogContent>
+              </Dialog>
             </div>
           </div>
+
+          {/* Real-time safety & tracking map & chat */}
+          {(isDriver || hasBooking) && (
+            <div className="grid gap-6 md:grid-cols-2">
+              <LiveTrackingMap
+                rideId={rideId}
+                role={isDriver ? "driver" : "passenger"}
+                origin={ride.from}
+                destination={ride.to}
+                originCoords={ride.originCoords}
+                destinationCoords={ride.destinationCoords}
+              />
+              <ChatWindow rideId={rideId} />
+            </div>
+          )}
+
+          {/* SOS Floating Action */}
+          {(isDriver || hasBooking) && ride.status === "active" && <SOSButton rideId={rideId} />}
 
           {/* Review section for completed rides */}
           {isCompleted && hasBooking && (
@@ -407,7 +565,8 @@ export default function RideDetails() {
             <div>
               <p className="text-sm font-semibold text-emerald-500">Secure Escrow Protection</p>
               <p className="mt-1.5 text-[11px] text-muted-foreground leading-relaxed">
-                Your payment is held safely in escrow and is released to the driver only after you confirm completion or after 24h.
+                Your payment is held safely in escrow and is released to the driver only after you
+                confirm completion or after 24h.
               </p>
             </div>
           </div>

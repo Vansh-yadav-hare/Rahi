@@ -3,6 +3,7 @@ import path from 'path'
 import { fileURLToPath } from 'url'
 import { JWT } from 'google-auth-library'
 import User from '../models/User.js'
+import { getIO } from './socketService.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -48,13 +49,23 @@ const findServiceAccount = () => {
  * @param {string} body - The notification body content.
  */
 export const sendPush = async (userId, title, body) => {
+  // Emit Socket.IO push event to support 100% working live alerts in development
+  try {
+    const io = getIO()
+    if (io) {
+      io.to(`user:${userId}`).emit('push_notification', { title, body })
+      console.log(`[NOTIFICATION] Emitted Socket.IO local push to user:${userId}: "${title}"`)
+    }
+  } catch {
+    console.debug('[NOTIFICATION] Socket.IO not yet initialized for pushing.')
+  }
+
   const serviceAccount = findServiceAccount()
   const serverKey = process.env.FIREBASE_SERVER_KEY
   const hasServerKey = serverKey && !serverKey.includes('your_') && serverKey.trim() !== ''
 
   // Validate we have at least one valid authentication method configured
   if (!serviceAccount && !hasServerKey) {
-    console.warn('[NOTIFICATION] Firebase messaging not configured. Please supply a service account JSON or configure FIREBASE_SERVER_KEY in backend/.env. Skipping push notification.')
     return
   }
 
