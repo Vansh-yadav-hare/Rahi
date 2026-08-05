@@ -296,7 +296,9 @@ export default function Booking() {
             Seat Secured (Payment in Escrow)
           </h2>
           <p className="mt-3 text-sm text-muted-foreground leading-relaxed">
-            Your payment of <strong>₹{totalAmount}</strong> was successfully verified and is now held safely in Rahi Escrow. Funds will be released to the driver only after the ride completes.
+            Your payment of <strong>₹{totalAmount}</strong> was successfully verified and is now
+            held safely in Rahi Escrow. Funds will be released to the driver only after the ride
+            completes.
           </p>
 
           <div className="mt-8 border-t border-border/30 pt-6 text-left space-y-3 text-xs text-muted-foreground">

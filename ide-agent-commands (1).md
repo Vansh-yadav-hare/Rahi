@@ -261,23 +261,7 @@ Display existing reviews on the driver's public profile page.
 
 ---
 
-## 11. Deploy MVP checkpoint
-
-🔑 **EXTERNAL SERVICE — before continuing:**
-Set up your AWS account/IAM user (or whichever host you choose), and have those credentials ready — the agent should ask for the exact ones it needs (e.g. `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`) rather than assuming a deployment target.
-
-```
-Add a Dockerfile for backend/ and a build script for frontend/ (static export
-for S3/CloudFront or a Node server for Vercel/Render — tell me which target
-you're deploying to and generate the matching config). Add a GitHub Actions
-workflow that runs lint and tests on every PR. If any deployment step needs
-credentials or secrets, list exactly which ones and where I should generate
-them (e.g. AWS IAM console) instead of assuming defaults.
-```
-
----
-
-## 12. Phase 2 — safety features (one endpoint/component pair at a time)
+## 11. Phase 2 — safety features (one endpoint/component pair at a time)
 
 Repeat the same pattern for each feature — backend endpoint first, then the matching frontend piece:
 
@@ -320,6 +304,22 @@ Implement POST /api/sos in backend/, logging to sos_alerts and notifying the
 user's pre-registered emergency contacts via SMS/push. If SMS is needed and no
 provider is configured yet, tell me which one to sign up for and what env var
 to add. Create an SOSButton component in frontend/ visible during an active ride.
+```
+
+---
+
+## 12. Deploy MVP checkpoint
+
+🔑 **EXTERNAL SERVICE — before continuing:**
+Set up your AWS account/IAM user (or whichever host you choose), and have those credentials ready — the agent should ask for the exact ones it needs (e.g. `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`) rather than assuming a deployment target.
+
+```
+Add a Dockerfile for backend/ and a build script for frontend/ (static export
+for S3/CloudFront or a Node server for Vercel/Render — tell me which target
+you're deploying to and generate the matching config). Add a GitHub Actions
+workflow that runs lint and tests on every PR. If any deployment step needs
+credentials or secrets, list exactly which ones and where I should generate
+them (e.g. AWS IAM console) instead of assuming defaults.
 ```
 
 ---

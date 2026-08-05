@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "../features/auth/AuthContext";
-import { Navigate } from "react-router-dom";
+import { Navigate, Link } from "react-router-dom";
 import { Button } from "../components/ui/button";
 import { Loader2, CheckCircle2, AlertCircle, Camera } from "lucide-react";
 import apiClient from "../services/apiClient";
@@ -71,9 +71,7 @@ export default function Profile() {
 
   const renderAvatarContent = (photo, initials) => {
     if (photo && (photo.startsWith("data:") || photo.startsWith("http"))) {
-      return (
-        <img src={photo} alt="Avatar" className="size-full rounded-full object-cover" />
-      );
+      return <img src={photo} alt="Avatar" className="size-full rounded-full object-cover" />;
     }
     if (photo && photo.length <= 4) {
       return <span className="text-3xl">{photo}</span>;
@@ -93,6 +91,28 @@ export default function Profile() {
         <p className="mt-2 text-muted-foreground text-sm">
           Manage your personal information and verified status.
         </p>
+
+        {/* Verification Status Card */}
+        <div className="mt-6 rounded-2xl border border-border/40 bg-background/30 p-4 flex items-center justify-between">
+          <div className="flex-1 pr-4">
+            <h3 className="text-sm font-bold text-foreground">Identity Verification</h3>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              {user?.isVerified
+                ? "Your identity is verified. You get full access and higher trust."
+                : "Verify your identity to get the trust badge and offer rides."}
+            </p>
+          </div>
+          <Link
+            to="/verification"
+            className={`inline-flex items-center justify-center rounded-xl px-4 py-2 text-xs font-bold transition-smooth shrink-0 ${
+              user?.isVerified
+                ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+                : "bg-primary text-primary-foreground hover:bg-primary/90"
+            }`}
+          >
+            {user?.isVerified ? "Verified" : "Verify Now"}
+          </Link>
+        </div>
 
         {saveSuccess && (
           <div className="mt-6 flex items-start gap-2.5 rounded-xl bg-gradient-mint/10 p-3.5 text-sm text-primary border border-primary/20">
@@ -215,7 +235,13 @@ export default function Profile() {
           </div>
 
           <div className="flex flex-col sm:flex-row gap-3 pt-5 border-t border-border/30">
-            <Button type="submit" variant="hero" size="lg" className="flex-1" disabled={saveLoading}>
+            <Button
+              type="submit"
+              variant="hero"
+              size="lg"
+              className="flex-1"
+              disabled={saveLoading}
+            >
               {saveLoading ? (
                 <>
                   <Loader2 className="mr-2 size-4 animate-spin" /> Saving...

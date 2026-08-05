@@ -1,5 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import apiClient from "../../services/apiClient";
+import { requestAndRegisterFcmToken, onForegroundMessage } from "../../firebase";
+import { toast } from "sonner";
 
 const AuthContext = createContext();
 
@@ -18,6 +20,8 @@ export function AuthProvider({ children }) {
         .get("/users/me")
         .then((response) => {
           setUser(response.data);
+          // Register FCM token dynamically on mount
+          requestAndRegisterFcmToken();
         })
         .catch((error) => {
           console.error("Session token validation failed:", error.message);
@@ -34,10 +38,26 @@ export function AuthProvider({ children }) {
     }
   }, []);
 
+  // Listen for FCM foreground notifications when user is active
+  useEffect(() => {
+    if (user) {
+      const unsubscribe = onForegroundMessage((payload) => {
+        if (payload?.notification) {
+          toast.info(payload.notification.title, {
+            description: payload.notification.body,
+          });
+        }
+      });
+      return () => unsubscribe();
+    }
+  }, [user]);
+
   const login = (jwtToken, userData) => {
     localStorage.setItem("token", jwtToken);
     setToken(jwtToken);
     setUser(userData);
+    // Request permission & register FCM token on successful login
+    requestAndRegisterFcmToken();
   };
 
   const logout = () => {

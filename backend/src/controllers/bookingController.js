@@ -291,7 +291,7 @@ export const cancelBooking = async (req, res) => {
       booking.paymentStatus = 'REFUND_INITIATED'
       await booking.save()
 
-      const refundResult = await processRazorpayRefund(booking.paymentId, passengerRefundAmount)
+      await processRazorpayRefund(booking.paymentId, passengerRefundAmount)
       
       booking.paymentStatus = nextPaymentStatus
       // Save refund details in cancellation info

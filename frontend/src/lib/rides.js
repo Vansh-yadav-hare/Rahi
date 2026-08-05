@@ -206,6 +206,8 @@ export function normalizeRide(apiRide) {
     to: getShortAddress(apiRide.destination?.address),
     fullFrom: apiRide.origin?.address,
     fullTo: apiRide.destination?.address,
+    originCoords: apiRide.origin?.location?.coordinates, // [lng, lat]
+    destinationCoords: apiRide.destination?.location?.coordinates, // [lng, lat]
     date: departureDate.toLocaleDateString("en-IN", {
       weekday: "short",
       day: "numeric",

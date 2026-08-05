@@ -162,7 +162,7 @@ export const verifyPaymentSignature = async (req, res) => {
         razorpayPaymentId: razorpay_payment_id,
         razorpaySignature: razorpay_signature || 'mock_signature',
       },
-      { new: true }
+      { returnDocument: 'after' }
     )
 
     // 3. Confirm the Booking (status -> BOOKED, paymentStatus -> PAID_IN_ESCROW)
@@ -173,7 +173,7 @@ export const verifyPaymentSignature = async (req, res) => {
         paymentStatus: 'PAID_IN_ESCROW',
         paymentId: razorpay_payment_id,
       },
-      { new: true }
+      { returnDocument: 'after' }
     ).populate('rideId')
 
     if (!booking) {

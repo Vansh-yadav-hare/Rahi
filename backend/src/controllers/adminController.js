@@ -1,5 +1,4 @@
 import Booking from '../models/Booking.js'
-import Ride from '../models/Ride.js'
 import User from '../models/User.js'
 import Payment from '../models/Payment.js'
 import Transaction from '../models/Transaction.js'
