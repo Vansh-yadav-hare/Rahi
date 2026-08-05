@@ -83,7 +83,7 @@ export default function ChatWindow({ rideId }) {
   };
 
   return (
-    <div className="flex flex-col h-full rounded-3xl border border-border/40 bg-card/35 backdrop-blur-md overflow-hidden shadow-soft">
+    <div id="chat-window" className="flex flex-col h-full rounded-3xl border border-border/40 bg-card/35 backdrop-blur-md overflow-hidden shadow-soft">
       {/* Header */}
       <div className="flex items-center gap-2 border-b border-border/30 bg-background/20 px-5 py-3.5">
         <MessageSquare className="size-4 text-primary animate-pulse" />

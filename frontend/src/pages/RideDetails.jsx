@@ -161,6 +161,19 @@ export default function RideDetails() {
     navigate(`/booking/${ride.id}?${params.toString()}`);
   };
 
+  const handleMessageDriverClick = () => {
+    if (isDriver || hasBooking) {
+      const element = document.getElementById("chat-window");
+      if (element) {
+        element.scrollIntoView({ behavior: "smooth" });
+        const input = element.querySelector("input");
+        if (input) input.focus();
+      }
+    } else {
+      toast.info("Please request to book the ride first to communicate with the driver.");
+    }
+  };
+
   useEffect(() => {
     if (ride) {
       setPickup(ride.fullFrom || ride.from);
@@ -350,7 +363,11 @@ export default function RideDetails() {
             </p>
 
             <div className="mt-6 flex w-full gap-3 border-t border-border/30 pt-6">
-              <Button variant="outline" className="flex-1 border-border/60 justify-center">
+              <Button
+                variant="outline"
+                className="flex-1 border-border/60 justify-center"
+                onClick={handleMessageDriverClick}
+              >
                 <MessagesSquare className="size-4 mr-1.5" /> Message driver
               </Button>
               <Dialog open={isReportOpen} onOpenChange={setIsReportOpen}>
@@ -631,6 +648,15 @@ export default function RideDetails() {
                   Completed
                 </Button>
               )
+            ) : hasBooking ? (
+              <Button
+                variant="outline"
+                size="xl"
+                className="mt-7 w-full border-emerald-500/30 bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20"
+                disabled
+              >
+                Booking Confirmed
+              </Button>
             ) : (
               <Button
                 variant="hero"
