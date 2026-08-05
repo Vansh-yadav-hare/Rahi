@@ -145,12 +145,19 @@ export default function LiveTrackingMap({
 
   // 3. Connect to Socket.IO Namespace
   useEffect(() => {
-    trackingSocket.connect();
-
-    trackingSocket.on("connect", () => {
+    const handleConnect = () => {
       setConnectionStatus("connected");
       trackingSocket.emit("join_ride", { rideId });
-    });
+    };
+
+    trackingSocket.connect();
+
+    // If socket is already connected (e.g. from hot-reload, fast-navigation, or Double Mount)
+    if (trackingSocket.connected) {
+      handleConnect();
+    }
+
+    trackingSocket.on("connect", handleConnect);
 
     trackingSocket.on("disconnect", () => {
       setConnectionStatus("disconnected");
@@ -186,7 +193,7 @@ export default function LiveTrackingMap({
     }
 
     return () => {
-      trackingSocket.off("connect");
+      trackingSocket.off("connect", handleConnect);
       trackingSocket.off("disconnect");
       trackingSocket.off("location_updated");
       trackingSocket.disconnect();

@@ -18,13 +18,20 @@ export default function ChatWindow({ rideId }) {
   useEffect(() => {
     if (!rideId) return;
 
+    const handleConnect = () => {
+      setConnected(true);
+      chatSocket.emit("join_chat", { rideId });
+    };
+
     // Connect to Chat Socket
     chatSocket.connect();
 
-    chatSocket.on("connect", () => {
-      setConnected(true);
-      chatSocket.emit("join_chat", { rideId });
-    });
+    // If socket is already connected (e.g. from hot-reload, fast-navigation, or Double Mount)
+    if (chatSocket.connected) {
+      handleConnect();
+    }
+
+    chatSocket.on("connect", handleConnect);
 
     chatSocket.on("disconnect", () => {
       setConnected(false);
@@ -43,7 +50,7 @@ export default function ChatWindow({ rideId }) {
     });
 
     return () => {
-      chatSocket.off("connect");
+      chatSocket.off("connect", handleConnect);
       chatSocket.off("disconnect");
       chatSocket.off("message_history");
       chatSocket.off("receive_message");
