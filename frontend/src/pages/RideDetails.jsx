@@ -47,6 +47,9 @@ export default function RideDetails() {
   const { user } = useAuth();
   const navigate = useNavigate();
 
+  const searchParams = new URLSearchParams(window.location.search);
+  const isTrackingShare = searchParams.get("track") === "true";
+
   const [ride, setRide] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -172,6 +175,12 @@ export default function RideDetails() {
     } else {
       toast.info("Please request to book the ride first to communicate with the driver.");
     }
+  };
+
+  const handleShareTracking = () => {
+    const shareUrl = `${window.location.origin}/ride/${rideId}?track=true`;
+    navigator.clipboard.writeText(shareUrl);
+    toast.success("Tracking link copied! Paste and share it via WhatsApp or any messaging app.");
   };
 
   useEffect(() => {
@@ -465,8 +474,8 @@ export default function RideDetails() {
           </div>
 
           {/* Real-time safety & tracking map & chat */}
-          {(isDriver || hasBooking) && (
-            <div className="grid gap-6 md:grid-cols-2">
+          {(isDriver || hasBooking || isTrackingShare) && (
+            <div className={`grid gap-6 ${isDriver || hasBooking ? "md:grid-cols-2" : "grid-cols-1"}`}>
               <LiveTrackingMap
                 rideId={rideId}
                 role={isDriver ? "driver" : "passenger"}
@@ -475,7 +484,7 @@ export default function RideDetails() {
                 originCoords={ride.originCoords}
                 destinationCoords={ride.destinationCoords}
               />
-              <ChatWindow rideId={rideId} />
+              {(isDriver || hasBooking) && <ChatWindow rideId={rideId} />}
             </div>
           )}
 
@@ -678,11 +687,23 @@ export default function RideDetails() {
             </p>
           </div>
 
-          <div className="mt-4 rounded-2xl border border-primary/20 bg-primary/5 p-5">
-            <p className="text-sm font-semibold text-primary">Tracked from start to finish</p>
-            <p className="mt-1.5 text-xs text-muted-foreground leading-relaxed">
-              Share a live link with family, chat in-app, and trigger SOS at any point in the trip.
-            </p>
+          <div className="mt-4 rounded-2xl border border-primary/20 bg-primary/5 p-5 flex flex-col gap-3">
+            <div>
+              <p className="text-sm font-semibold text-primary">Tracked from start to finish</p>
+              <p className="mt-1.5 text-xs text-muted-foreground leading-relaxed">
+                Share a live link with family, chat in-app, and trigger SOS at any point in the trip.
+              </p>
+            </div>
+            {(isDriver || hasBooking) && (
+              <Button
+                variant="hero"
+                size="sm"
+                className="w-full text-xs font-bold"
+                onClick={handleShareTracking}
+              >
+                Share Live Tracking Link
+              </Button>
+            )}
           </div>
 
           <div className="mt-4 rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-5 flex items-start gap-2.5">
