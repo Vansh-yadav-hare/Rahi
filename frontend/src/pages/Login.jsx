@@ -203,8 +203,18 @@ export default function Login() {
         <div className="mt-6 flex justify-center">
           {googleClientMissing ? (
             <div className="w-full text-center p-4 border border-dashed border-amber-500/30 rounded-2xl bg-amber-500/5 text-amber-200 text-xs">
-              <span className="font-semibold block mb-1.5 text-amber-400">Google Login Not Configured</span>
-              Add <code className="bg-background/80 px-1.5 py-0.5 rounded text-foreground font-mono text-[10px]">VITE_GOOGLE_CLIENT_ID</code> to your <code className="bg-background/80 px-1.5 py-0.5 rounded text-foreground font-mono text-[10px]">frontend/.env</code> to show the Google button.
+              <span className="font-semibold block mb-1.5 text-amber-400">
+                Google Login Not Configured
+              </span>
+              Add{" "}
+              <code className="bg-background/80 px-1.5 py-0.5 rounded text-foreground font-mono text-[10px]">
+                VITE_GOOGLE_CLIENT_ID
+              </code>{" "}
+              to your{" "}
+              <code className="bg-background/80 px-1.5 py-0.5 rounded text-foreground font-mono text-[10px]">
+                frontend/.env
+              </code>{" "}
+              to show the Google button.
             </div>
           ) : (
             <div

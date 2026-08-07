@@ -177,7 +177,8 @@ export default function Booking() {
         try {
           const verifyResponse = await apiClient.post("/payments/verify", {
             razorpay_order_id: order.orderId,
-            razorpay_payment_id: "pay_mock_" + Math.random().toString(36).substring(2, 10).toUpperCase(),
+            razorpay_payment_id:
+              "pay_mock_" + Math.random().toString(36).substring(2, 10).toUpperCase(),
             razorpay_signature: "mock_signature",
             bookingId: booking._id,
           });

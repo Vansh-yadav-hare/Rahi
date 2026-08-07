@@ -1,6 +1,5 @@
 import crypto from 'crypto'
 import Transaction from '../models/Transaction.js'
-import User from '../models/User.js'
 
 /**
  * Retrieves the current authenticated user's wallet balance and detailed transaction logs.

@@ -70,9 +70,7 @@ export default function Wallet() {
       }));
 
       setWithdrawSuccess(
-        `Successfully withdrew ₹${parseFloat(withdrawAmount).toFixed(2)} to ${
-          upiId || "UPI ID"
-        }!`,
+        `Successfully withdrew ₹${parseFloat(withdrawAmount).toFixed(2)} to ${upiId || "UPI ID"}!`,
       );
       setWithdrawAmount("");
       setUpiId("");
@@ -248,7 +246,8 @@ export default function Wallet() {
             <WalletIcon className="size-5 text-primary" /> Withdraw Funds
           </h2>
           <p className="text-xs text-muted-foreground leading-relaxed mb-6">
-            Enter your UPI ID and the amount you wish to transfer. Withdrawals are processed and settled simulated-instantly.
+            Enter your UPI ID and the amount you wish to transfer. Withdrawals are processed and
+            settled simulated-instantly.
           </p>
 
           <form onSubmit={handleWithdraw} className="space-y-4">
@@ -316,7 +315,10 @@ export default function Wallet() {
           ) : (
             <div className="divide-y divide-border/20 space-y-4">
               {transactions.map((t, i) => (
-                <div key={t._id} className={`flex items-center justify-between gap-4 pt-4 ${i === 0 ? "pt-0" : ""}`}>
+                <div
+                  key={t._id}
+                  className={`flex items-center justify-between gap-4 pt-4 ${i === 0 ? "pt-0" : ""}`}
+                >
                   <div className="flex items-center gap-3.5 min-w-0">
                     {renderTransactionIcon(t.type)}
                     <div className="min-w-0">
@@ -330,7 +332,9 @@ export default function Wallet() {
                   </div>
 
                   <div className="text-right shrink-0">
-                    <span className={`text-sm ${getAmountColor(t.type)} flex items-center justify-end`}>
+                    <span
+                      className={`text-sm ${getAmountColor(t.type)} flex items-center justify-end`}
+                    >
                       {getAmountPrefix(t.type)}
                       <IndianRupee className="size-3.5 mr-0.5" />
                       {t.amount.toFixed(2)}

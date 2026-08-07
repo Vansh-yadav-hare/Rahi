@@ -536,7 +536,6 @@ export const payWithWallet = async (req, res) => {
       return res.status(400).json({ message: 'Booking is not in a payable state.' })
     }
 
-    const ride = booking.rideId
     const passenger = req.user
 
     // Calculate segment price

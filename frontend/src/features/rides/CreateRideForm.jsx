@@ -277,7 +277,7 @@ export default function CreateRideForm() {
         dateTime,
         seatsAvailable: parseInt(seatsAvailable, 10),
         price: parseFloat(price),
-        stops: stops.filter(s => s && s.trim()), // save geocoded stops
+        stops: stops.filter((s) => s && s.trim()), // save geocoded stops
         womenOnly,
         instantBook,
         route: [],
@@ -402,7 +402,7 @@ export default function CreateRideForm() {
             <Plus className="size-3.5" /> Add Stop
           </button>
         </div>
-        
+
         {stops.map((stop, index) => (
           <div key={index} className="flex items-center gap-2">
             <StopInput

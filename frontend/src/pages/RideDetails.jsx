@@ -475,7 +475,9 @@ export default function RideDetails() {
 
           {/* Real-time safety & tracking map & chat */}
           {(isDriver || hasBooking || isTrackingShare) && (
-            <div className={`grid gap-6 ${isDriver || hasBooking ? "md:grid-cols-2" : "grid-cols-1"}`}>
+            <div
+              className={`grid gap-6 ${isDriver || hasBooking ? "md:grid-cols-2" : "grid-cols-1"}`}
+            >
               <LiveTrackingMap
                 rideId={rideId}
                 role={isDriver ? "driver" : "passenger"}
@@ -537,7 +539,9 @@ export default function RideDetails() {
           <div className="rounded-3xl border border-border/40 bg-card/45 backdrop-blur-md p-7 shadow-lift">
             <div className="flex items-end justify-between">
               <div>
-                <div className="font-display text-3xl font-bold text-foreground">₹{proratedPrice || ride.price}</div>
+                <div className="font-display text-3xl font-bold text-foreground">
+                  ₹{proratedPrice || ride.price}
+                </div>
                 <div className="text-xs text-muted-foreground mt-0.5">per seat, all inclusive</div>
               </div>
               <span className="inline-flex items-center gap-1 rounded-full bg-secondary/80 px-2.5 py-1 text-xs font-semibold text-secondary-foreground">
@@ -569,7 +573,10 @@ export default function RideDetails() {
                     }}
                     className="w-full rounded-xl border border-border/40 bg-background/25 px-3 py-2.5 text-xs text-foreground outline-none cursor-pointer focus:border-primary/50"
                   >
-                    {[ride.fullFrom || ride.from, ...(ride.rawStops || []).map((s) => s.address)].map((addr, idx) => (
+                    {[
+                      ride.fullFrom || ride.from,
+                      ...(ride.rawStops || []).map((s) => s.address),
+                    ].map((addr, idx) => (
                       <option key={idx} value={addr} className="bg-card text-foreground">
                         {getShortAddress(addr)}
                       </option>
@@ -586,22 +593,24 @@ export default function RideDetails() {
                     onChange={(e) => setDropoff(e.target.value)}
                     className="w-full rounded-xl border border-border/40 bg-background/25 px-3 py-2.5 text-xs text-foreground outline-none cursor-pointer focus:border-primary/50"
                   >
-                    {[...(ride.rawStops || []).map((s) => s.address), ride.fullTo || ride.to].map((addr, idx) => {
-                      const stopsList = [
-                        ride.fullFrom || ride.from,
-                        ...(ride.rawStops || []).map((s) => s.address),
-                        ride.fullTo || ride.to,
-                      ];
-                      const startIdx = stopsList.indexOf(pickup);
-                      const currentIdx = stopsList.indexOf(addr);
-                      if (currentIdx <= startIdx) return null;
+                    {[...(ride.rawStops || []).map((s) => s.address), ride.fullTo || ride.to].map(
+                      (addr, idx) => {
+                        const stopsList = [
+                          ride.fullFrom || ride.from,
+                          ...(ride.rawStops || []).map((s) => s.address),
+                          ride.fullTo || ride.to,
+                        ];
+                        const startIdx = stopsList.indexOf(pickup);
+                        const currentIdx = stopsList.indexOf(addr);
+                        if (currentIdx <= startIdx) return null;
 
-                      return (
-                        <option key={idx} value={addr} className="bg-card text-foreground">
-                          {getShortAddress(addr)}
-                        </option>
-                      );
-                    })}
+                        return (
+                          <option key={idx} value={addr} className="bg-card text-foreground">
+                            {getShortAddress(addr)}
+                          </option>
+                        );
+                      },
+                    )}
                   </select>
                 </div>
               </div>
@@ -615,7 +624,8 @@ export default function RideDetails() {
               <div className="flex items-center justify-between">
                 <span className="text-muted-foreground font-medium">Pickup</span>
                 <span className="flex items-center gap-1 font-semibold text-foreground">
-                  <MapPin className="size-3.5 text-primary" /> {getShortAddress(pickup || ride.from)}
+                  <MapPin className="size-3.5 text-primary" />{" "}
+                  {getShortAddress(pickup || ride.from)}
                 </span>
               </div>
               <div className="flex items-center justify-between">
@@ -691,7 +701,8 @@ export default function RideDetails() {
             <div>
               <p className="text-sm font-semibold text-primary">Tracked from start to finish</p>
               <p className="mt-1.5 text-xs text-muted-foreground leading-relaxed">
-                Share a live link with family, chat in-app, and trigger SOS at any point in the trip.
+                Share a live link with family, chat in-app, and trigger SOS at any point in the
+                trip.
               </p>
             </div>
             {(isDriver || hasBooking) && (
